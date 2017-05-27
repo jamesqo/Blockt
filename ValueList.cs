@@ -88,9 +88,17 @@ namespace Blockt
         {
             Debug.Assert(_count == Capacity);
 
-            int newCapacity = _count == 0 ? InitialCapacity : _count * 2;
-            var newArray = new T[newCapacity];
-            Array.Copy(_array, 0, newArray, 0, _count);
+            T[] newArray;
+            if (_count == 0)
+            {
+                newArray = new T[InitialCapacity];
+            }
+            else
+            {
+                newArray = new T[_count * 2];
+                Array.Copy(_array, 0, newArray, 0, _count);
+            }
+            
             _array = newArray;
         }
 
