@@ -1,0 +1,2 @@
+C:\cygwin64\home\james\Code\cs\Blockt\bin\Debug\netstandard1.4\Blockt.deps.json
+C:\cygwin64\home\james\Code\cs\Blockt\obj\Debug\netstandard1.4\Blockt.AssemblyInfo.cs
