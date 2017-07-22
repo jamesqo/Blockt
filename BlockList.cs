@@ -7,51 +7,52 @@ namespace Clever.Collections
 {
     public class BlockList<T> : ICollection<T>
     {
-        private const int InitialCapacity = 4;
+        // TODO: Add XML docs for everything.
+
+        private readonly int _initialCapacity;
 
         // This is a mutable struct field; do not make it readonly.
-        private SmallList<T[]> _blocks;
-        private T[] _current;
-        private int _index;
+        private SmallList<T[]> _tail;
+        private T[] _head;
+        private int _headCount;
         private int _count;
         
         public BlockList()
+            : this(initialCapacity: 32)
         {
-            _current = Array.Empty<T>();
         }
 
-        public BlockList(ICollection<T> collection)
+        public BlockList(int initialCapacity)
         {
-            Initialize(collection);
+            Debug.Assert(initialCapacity > 0);
+
+            _head = Array.Empty<T>();
+            _initialCapacity = initialCapacity;
         }
 
         public BlockList(IEnumerable<T> enumerable)
         {
-            if (enumerable is ICollection<T> collection)
-            {
-                Initialize(collection);
-                return;
-            }
-            
             AddRange(enumerable);
         }
 
-        public int BlockCount => _blocks.Count + 1;
+        public int BlockCount => TailCount + 1;
 
         public int Count => _count;
 
-        private bool AtEndOfCurrentBlock => _index == _current.Length;
+        private int HeadCapacity => _head.Length;
 
-        private int CurrentBlockCapacity => _current.Length;
+        private bool IsHeadFull => _headCount == HeadCapacity;
+
+        private int TailCount => _tail.Count;
 
         public void Add(T item)
         {
-            if (AtEndOfCurrentBlock)
+            if (IsHeadFull)
             {
                 MakeRoom();
             }
 
-            _current[_index++] = item;
+            _head[_headCount++] = item;
         }
 
         public void AddRange(IEnumerable<T> enumerable)
@@ -64,77 +65,94 @@ namespace Clever.Collections
 
         public void Clear()
         {
-            _blocks.Clear();
-            _current = Array.Empty<T>();
-            _index = 0;
+            for (int i = 0; i < TailCount; i++)
+            {
+                T[] block = _tail[i];
+                _tail[i] = null;
+                Array.Clear(block, 0, block.Length);
+            }
+            _tail = new SmallList<T[]>();
+
+            Array.Clear(_head, 0, _headCount);
+            _head = Array.Empty<T>();
+
+            _headCount = 0;
             _count = 0;
         }
 
         public bool Contains(T item)
         {
-            foreach (T[] block in _blocks)
+            for (int i = 0; i < TailCount; i++)
             {
+                T[] block = _tail[i];
                 if (Array.IndexOf(block, item) >= 0)
                 {
                     return true;
                 }
             }
 
-            return Array.IndexOf(_current, item) >= 0;
+            return Array.IndexOf(_head, item, 0, _headCount) >= 0;
         }
 
         public void CopyTo(T[] array, int arrayIndex)
         {
-            foreach (T[] block in _blocks)
+            for (int i = 0; i < TailCount; i++)
             {
+                T[] block = _tail[i];
                 Array.Copy(block, 0, array, arrayIndex, block.Length);
                 arrayIndex += block.Length;
             }
 
-            Array.Copy(_current, 0, array, arrayIndex, _index);
+            Array.Copy(_head, 0, array, arrayIndex, _headCount);
         }
 
         public T[] GetBlock(int index)
         {
-            if (index < _blocks.Count)
+            if (index < TailCount)
             {
-                return _blocks[index];
+                return _tail[index];
             }
 
-            Debug.Assert(index == _blocks.Count);
-            return _current;
+            Debug.Assert(index == TailCount);
+            return _head;
+        }
+
+        public T[][] GetBlocks()
+        {
+            var blocks = new T[BlockCount][];
+            _tail.CopyTo(blocks);
+            blocks[TailCount] = _head;
+            return blocks;
         }
 
         public Enumerator GetEnumerator() => new Enumerator(this);
 
         public T[] ToArray()
         {
-            if (BlockCount == 1 && AtEndOfCurrentBlock)
+            if (_count == 0)
             {
-                return _current;
+                return Array.Empty<T>();
             }
 
-            Debug.Assert(_count > 0);
             var array = new T[_count];
             CopyTo(array, 0);
             return array;
         }
 
-        private void Initialize(ICollection<T> collection)
-        {
-            _count = collection.Count;
-            _current = new T[_count];
-            collection.CopyTo(_current, 0);
-        }
-
         private void MakeRoom()
         {
-            Debug.Assert(AtEndOfCurrentBlock);
+            Debug.Assert(IsHeadFull);
 
-            _blocks.Add(_current);
-            int nextCapacity = Math.Max(CurrentBlockCapacity * 2, InitialCapacity);
-            _current = new T[nextCapacity];
-            _index = 0;
+            if (_count == 0)
+            {
+                _head = new T[_initialCapacity];
+                return;
+            }
+
+            _tail.Add(_head);
+            int nextCapacity = HeadCapacity * 2;
+            _head = new T[nextCapacity];
+            _headCount = 0;
         }
 
         bool ICollection<T>.IsReadOnly => false;
@@ -152,7 +170,8 @@ namespace Clever.Collections
             private int _blockIndex;
             private int _elementIndex;
 
-            internal Enumerator(BlockList<T> list) : this()
+            internal Enumerator(BlockList<T> list)
+                : this()
             {
                 _list = list;
                 _currentBlock = list.GetBlock(0);
@@ -167,18 +186,20 @@ namespace Clever.Collections
 
             public bool MoveNext()
             {
-                if (_elementIndex + 1 == _currentBlock.Length)
+                int elementIndex = _elementIndex + 1;
+                if (elementIndex == _currentBlock.Length)
                 {
-                    if (_blockIndex + 1 == _list.BlockCount)
+                    int blockIndex = _blockIndex + 1;
+                    if (blockIndex == _list.BlockCount)
                     {
                         return false;
                     }
 
-                    _currentBlock = _list.GetBlock(++_blockIndex);
-                    _elementIndex = -1;
+                    _currentBlock = _list.GetBlock(blockIndex);
+                    _blockIndex = blockIndex;
                 }
 
-                _elementIndex++;
+                _elementIndex = elementIndex;
                 return true;
             }
 

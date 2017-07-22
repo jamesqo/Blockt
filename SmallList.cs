@@ -5,6 +5,7 @@ using System.Diagnostics;
 
 namespace Clever.Collections
 {
+    // TODO: Add XML docs. Explain why it's called SmallList.
     internal struct SmallList<T>
     {
         private const int InitialCapacity = 4;
@@ -38,6 +39,16 @@ namespace Clever.Collections
             }
 
             _array[_count++] = item;
+        }
+
+        public void CopyTo(T[] destination)
+        {
+            // Since we contain a small number of elements, copy the elements manually
+            // to avoid overhead from Array.Copy.
+            for (int i = 0; i < _count; i++)
+            {
+                destination[i] = _array[i];
+            }
         }
 
         private void MakeRoom()
