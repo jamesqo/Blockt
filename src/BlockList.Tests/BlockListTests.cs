@@ -4,23 +4,24 @@ using System.Collections.Generic;
 using System.Linq;
 using Clever.Collections.Tests.TestInternal;
 using Xunit;
+using static Clever.Collections.BlockList;
 
 namespace Clever.Collections.Tests
 {
     public class BlockListTests
     {
-        private static IEnumerable<BlockListOptions> TestOptions
+        private static IEnumerable<Options> TestOptions
             => new[]
             {
-                BlockList.DefaultOptions,
-                BlockList.Options(initialCapacity: 1),
-                BlockList.Options(initialCapacity: 32)
+                DefaultOptions,
+                CreateOptions(initialCapacity: 1),
+                CreateOptions(initialCapacity: 32)
             };
 
         public static IEnumerable<object[]> TestOptions_Data()
             => TestOptions.ToTheoryData();
 
-        private static IEnumerable<(IEnumerable<int>, BlockListOptions)> TestEnumerablesAndOptions
+        private static IEnumerable<(IEnumerable<int>, Options)> TestEnumerablesAndOptions
             => TestOptions.SelectMany(
                 opts => GetTestEnumerables(opts).Select(
                     items => (items, opts)));
@@ -33,12 +34,12 @@ namespace Clever.Collections.Tests
         {
             var list = new BlockList<int>();
             CheckEmptyList(new BlockList<int>());
-            CheckOptions(list, BlockList.DefaultOptions);
+            CheckOptions(list, DefaultOptions);
         }
 
         [Theory]
         [MemberData(nameof(TestOptions_Data))]
-        public void Ctor_Options(BlockListOptions options)
+        public void Ctor_Options(Options options)
         {
             var list = new BlockList<int>(options);
             CheckEmptyList(list);
@@ -51,15 +52,15 @@ namespace Clever.Collections.Tests
         {
             var list = new BlockList<int>(items);
             CheckContents(list, items);
-            CheckOptions(list, BlockList.DefaultOptions);
+            CheckOptions(list, DefaultOptions);
         }
 
         public static IEnumerable<object[]> Ctor_Enumerable_Data()
-            => GetTestEnumerables(BlockList.DefaultOptions).ToTheoryData();
+            => GetTestEnumerables(DefaultOptions).ToTheoryData();
 
         [Theory]
         [MemberData(nameof(TestEnumerablesAndOptions_Data))]
-        public void Ctor_Enumerable_Options(IEnumerable<int> items, BlockListOptions options)
+        public void Ctor_Enumerable_Options(IEnumerable<int> items, Options options)
         {
             var list = new BlockList<int>(items, options);
             CheckContents(list, items);
@@ -68,7 +69,7 @@ namespace Clever.Collections.Tests
 
         [Theory]
         [MemberData(nameof(TestEnumerablesAndOptions_Data))]
-        public void Add_AddRange(IEnumerable<int> items, BlockListOptions options)
+        public void Add_AddRange(IEnumerable<int> items, Options options)
         {
             var list = new BlockList<int>(options);
 
@@ -87,7 +88,7 @@ namespace Clever.Collections.Tests
 
         [Theory]
         [MemberData(nameof(TestEnumerablesAndOptions_Data))]
-        public void Clear(IEnumerable<int> items, BlockListOptions options)
+        public void Clear(IEnumerable<int> items, Options options)
         {
             var list = new BlockList<int>(items, options);
             var blocks = list.GetBlocks();
@@ -205,12 +206,12 @@ namespace Clever.Collections.Tests
             Assert.Single(list.GetBlocks(), emptyBlock);
         }
 
-        private static void CheckOptions<T>(BlockList<T> list, BlockListOptions options)
+        private static void CheckOptions<T>(BlockList<T> list, Options options)
         {
             Assert.Same(options, list.Options);
         }
 
-        private static IEnumerable<IEnumerable<int>> GetTestEnumerables(BlockListOptions options)
+        private static IEnumerable<IEnumerable<int>> GetTestEnumerables(Options options)
         {
             IEnumerable<int> CreateEnumerable(int count)
             {
