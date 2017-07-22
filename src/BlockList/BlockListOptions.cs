@@ -3,6 +3,7 @@ using System.Diagnostics;
 
 namespace Clever.Collections
 {
+    // TODO: Consider renaming to BlockList.Options.
     public class BlockListOptions : IEquatable<BlockListOptions>
     {
         internal BlockListOptions(int initialCapacity)

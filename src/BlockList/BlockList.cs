@@ -39,15 +39,15 @@ namespace Clever.Collections
             _options = options;
         }
 
-        public BlockList(IEnumerable<T> enumerable)
-            : this(enumerable, BlockList.DefaultOptions)
+        public BlockList(IEnumerable<T> items)
+            : this(items, BlockList.DefaultOptions)
         {
         }
 
-        public BlockList(IEnumerable<T> enumerable, BlockListOptions options)
+        public BlockList(IEnumerable<T> items, BlockListOptions options)
             : this(options)
         {
-            AddRange(enumerable);
+            AddRange(items);
         }
 
         public int BlockCount => TailCount + 1;
@@ -59,6 +59,8 @@ namespace Clever.Collections
         public BlockListOptions Options => _options;
 
         private int HeadCapacity => _head.Length;
+
+        public bool IsMoveable => BlockCount == 1 && IsHeadFull;
 
         private ArraySegment<T> HeadSpan => new ArraySegment<T>(_head, 0, _headCount);
 
@@ -77,9 +79,9 @@ namespace Clever.Collections
             _count++;
         }
 
-        public void AddRange(IEnumerable<T> enumerable)
+        public void AddRange(IEnumerable<T> items)
         {
-            foreach (T item in enumerable)
+            foreach (T item in items)
             {
                 Add(item);
             }
@@ -152,6 +154,21 @@ namespace Clever.Collections
         }
 
         public Enumerator GetEnumerator() => new Enumerator(this);
+
+        public T[] MoveToArray()
+        {
+            // TODO: Throw here instead.
+            Debug.Assert(IsMoveable);
+
+            var result = _head;
+            _head = Array.Empty<T>();
+
+            _headCount = 0;
+            _count = 0;
+            _capacity = 0;
+
+            return result;
+        }
 
         public T[] ToArray()
         {

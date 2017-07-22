@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using Clever.Collections.Tests.TestInternal;
@@ -16,52 +17,148 @@ namespace Clever.Collections.Tests
                 BlockList.Options(initialCapacity: 32)
             };
 
+        public static IEnumerable<object[]> TestOptions_Data()
+            => TestOptions.ToTheoryData();
+
+        private static IEnumerable<(IEnumerable<int>, BlockListOptions)> TestEnumerablesAndOptions
+            => TestOptions.SelectMany(
+                opts => GetTestEnumerables(opts).Select(
+                    items => (items, opts)));
+
+        public static IEnumerable<object[]> TestEnumerablesAndOptions_Data()
+            => TestEnumerablesAndOptions.ToTheoryData();
+
         [Fact]
         public void Ctor_NoParams()
         {
+            var list = new BlockList<int>();
             CheckEmptyList(new BlockList<int>());
+            CheckOptions(list, BlockList.DefaultOptions);
         }
 
         [Theory]
-        [MemberData(nameof(Ctor_Options_Data))]
+        [MemberData(nameof(TestOptions_Data))]
         public void Ctor_Options(BlockListOptions options)
         {
-            CheckEmptyList(new BlockList<int>(options));
+            var list = new BlockList<int>(options);
+            CheckEmptyList(list);
+            CheckOptions(list, options);
         }
-
-        public static IEnumerable<object[]> Ctor_Options_Data()
-            => TestOptions.ToTheoryData();
 
         [Theory]
         [MemberData(nameof(Ctor_Enumerable_Data))]
-        public void Ctor_Enumerable(IEnumerable<int> enumerable)
+        public void Ctor_Enumerable(IEnumerable<int> items)
         {
-            var list = new BlockList<int>(enumerable);
-            CheckContents(list, enumerable);
-        }
-
-        [Theory]
-        [MemberData(nameof(Ctor_Enumerable_Options_Data))]
-        public void Ctor_Enumerable_Options(IEnumerable<int> enumerable, BlockListOptions options)
-        {
-            var list = new BlockList<int>(enumerable, options);
-            CheckContents(list, enumerable);
+            var list = new BlockList<int>(items);
+            CheckContents(list, items);
+            CheckOptions(list, BlockList.DefaultOptions);
         }
 
         public static IEnumerable<object[]> Ctor_Enumerable_Data()
             => GetTestEnumerables(BlockList.DefaultOptions).ToTheoryData();
 
-        public static IEnumerable<object[]> Ctor_Enumerable_Options_Data()
-            => TestOptions
-            .SelectMany(opts => GetTestEnumerables(opts).Select(en => (en, opts)))
-            .ToTheoryData();
+        [Theory]
+        [MemberData(nameof(TestEnumerablesAndOptions_Data))]
+        public void Ctor_Enumerable_Options(IEnumerable<int> items, BlockListOptions options)
+        {
+            var list = new BlockList<int>(items, options);
+            CheckContents(list, items);
+            CheckOptions(list, options);
+        }
+
+        [Theory]
+        [MemberData(nameof(TestEnumerablesAndOptions_Data))]
+        public void Add_AddRange(IEnumerable<int> items, BlockListOptions options)
+        {
+            var list = new BlockList<int>(options);
+
+            int count = 0;
+            foreach (int item in items)
+            {
+                count++;
+                list.Add(item);
+                CheckContents(list, items.Take(count));
+            }
+
+            list.Clear();
+            list.AddRange(items);
+            CheckContents(list, items);
+        }
+
+        [Theory]
+        [MemberData(nameof(TestEnumerablesAndOptions_Data))]
+        public void Clear(IEnumerable<int> items, BlockListOptions options)
+        {
+            var list = new BlockList<int>(items, options);
+            var blocks = list.GetBlocks();
+
+            list.Clear();
+
+            // Not only should clearing the BlockList free the references to each
+            // of its blocks, it should clear each block to free references the
+            // blocks themselves may hold.
+            Assert.All(blocks, block =>
+            {
+                var defaultValues = Enumerable.Repeat(0, block.Count);
+                Assert.Equal(defaultValues, block);
+            });
+
+            CheckEmptyList(list);
+            // Clearing the BlockList should preserve the options it was created with.
+            CheckOptions(list, options);
+        }
+
+        // TODO: Contains tests
 
         private static void CheckContents<T>(BlockList<T> list, IEnumerable<T> contents)
         {
+            void CheckCopyTo()
+            {
+                var buffer = new T[list.Count];
+                list.CopyTo(buffer, 0);
+                Assert.Equal(contents, buffer);
+            }
+
+            void CheckExplicitGetEnumerator()
+            {
+                Assert.Equal(contents, list);
+                Assert.Equal(contents, (IEnumerable)list);
+            }
+
+            void CheckGetBlockAndGetBlocks()
+            {
+                var blocks = list.GetBlocks();
+                int elementIndex = 0;
+
+                for (int i = 0; i < list.BlockCount; i++)
+                {
+                    var block = blocks[i];
+                    Assert.Equal(block, list.GetBlock(i));
+
+                    Assert.Equal(contents.Skip(elementIndex).Take(block.Count), block);
+                    elementIndex += block.Count;
+                }
+            }
+
+            void CheckGetEnumerator()
+            {
+                var buffer = new List<T>();
+                foreach (T item in list)
+                {
+                    buffer.Add(item);
+                }
+                Assert.Equal(contents, buffer);
+            }
+            
+            void CheckToArray() => Assert.Equal(contents, list.ToArray());
+
             CheckCount(list, contents.Count());
 
-            Assert.Equal(contents, list);
-            Assert.Equal(contents, list.ToArray());
+            CheckCopyTo();
+            CheckExplicitGetEnumerator();
+            CheckGetBlockAndGetBlocks();
+            CheckGetEnumerator();
+            CheckToArray();
         }
 
         private static void CheckCount<T>(BlockList<T> list, int count)
@@ -106,6 +203,11 @@ namespace Clever.Collections.Tests
             var emptyBlock = list.GetBlock(0);
             Assert.Empty(emptyBlock);
             Assert.Single(list.GetBlocks(), emptyBlock);
+        }
+
+        private static void CheckOptions<T>(BlockList<T> list, BlockListOptions options)
+        {
+            Assert.Same(options, list.Options);
         }
 
         private static IEnumerable<IEnumerable<int>> GetTestEnumerables(BlockListOptions options)
