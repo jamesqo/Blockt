@@ -31,6 +31,13 @@ namespace Clever.Collections
         }
 
         public BlockList(IEnumerable<T> enumerable)
+            : this()
+        {
+            AddRange(enumerable);
+        }
+
+        public BlockList(int initialCapacity, IEnumerable<T> enumerable)
+            : this(initialCapacity)
         {
             AddRange(enumerable);
         }
@@ -42,6 +49,8 @@ namespace Clever.Collections
         public int Count => _count;
 
         private int HeadCapacity => _head.Length;
+
+        private ArraySegment<T> HeadSpan => new ArraySegment<T>(_head, 0, _headCount);
 
         private bool IsHeadFull => _headCount == HeadCapacity;
 
@@ -109,22 +118,25 @@ namespace Clever.Collections
             Array.Copy(_head, 0, array, arrayIndex, _headCount);
         }
 
-        public T[] GetBlock(int index)
+        public ArraySegment<T> GetBlock(int index)
         {
             if (index < TailCount)
             {
-                return _tail[index];
+                return new ArraySegment<T>(_tail[index]);
             }
 
             Debug.Assert(index == TailCount);
-            return _head;
+            return HeadSpan;
         }
 
-        public T[][] GetBlocks()
+        public ArraySegment<T>[] GetBlocks()
         {
-            var blocks = new T[BlockCount][];
-            _tail.CopyTo(blocks);
-            blocks[TailCount] = _head;
+            var blocks = new ArraySegment<T>[BlockCount];
+            for (int i = 0; i < TailCount; i++)
+            {
+                blocks[i] = new ArraySegment<T>(_tail[i]);
+            }
+            blocks[TailCount] = HeadSpan;
             return blocks;
         }
 
@@ -154,8 +166,11 @@ namespace Clever.Collections
             }
 
             _tail.Add(_head);
-            // TODO: We're not supposed to 32 64, we're supposed to 32 32 64.
-            int nextCapacity = HeadCapacity * 2;
+            // We want to increase the block sizes geometrically, but not on the first resize.
+            // This ensures we never waste more than 50% of the memory we've allocated.
+            int nextCapacity = _capacity == _initialCapacity
+                ? _initialCapacity
+                : HeadCapacity * 2;
             _head = new T[nextCapacity];
             _headCount = 0;
             _capacity += nextCapacity;
@@ -172,7 +187,7 @@ namespace Clever.Collections
         public struct Enumerator : IEnumerator<T>
         {
             private readonly BlockList<T> _list;
-            private T[] _currentBlock;
+            private ArraySegment<T> _currentBlock;
             private int _blockIndex;
             private int _elementIndex;
 
@@ -184,7 +199,8 @@ namespace Clever.Collections
                 _elementIndex = -1;
             }
 
-            public T Current => _currentBlock[_elementIndex];
+            // This can be changed to index _currentBlock directly once ArraySegment.this[] is available.
+            public T Current => _currentBlock.Array[_currentBlock.Offset + _elementIndex];
 
             public void Dispose()
             {
@@ -193,7 +209,7 @@ namespace Clever.Collections
             public bool MoveNext()
             {
                 int elementIndex = _elementIndex + 1;
-                if (elementIndex == _currentBlock.Length)
+                if (elementIndex == _currentBlock.Count)
                 {
                     int blockIndex = _blockIndex + 1;
                     if (blockIndex == _list.BlockCount)
