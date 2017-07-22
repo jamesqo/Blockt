@@ -119,7 +119,28 @@ namespace Clever.Collections.Tests
             CheckOptions(list, options);
         }
 
-        // TODO: Contains & others tests
+        [Theory]
+        [MemberData(nameof(TestEnumerablesAndOptions_Data))]
+        public void Contains_True(IEnumerable<int> items, Options options)
+        {
+            var list = new BlockList<int>(items, options);
+            Assert.All(list, item =>
+            {
+                Assert.True(list.Contains(item));
+            });
+        }
+
+        [Theory]
+        [MemberData(nameof(TestEnumerablesAndOptions_Data))]
+        public void Contains_False(IEnumerable<int> items, Options options)
+        {
+            var list = new BlockList<int>(items, options);
+            var excluded = new[] { checked(list.MaxOrDefault() + 1), checked(list.MinOrDefault() - 1) };
+            Assert.All(excluded, item =>
+            {
+                Assert.False(list.Contains(item));
+            });
+        }
 
         [Theory]
         [MemberData(nameof(TestEnumerablesAndOptions_Data))]

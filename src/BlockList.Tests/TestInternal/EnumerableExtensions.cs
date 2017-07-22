@@ -7,14 +7,24 @@ namespace Clever.Collections.Tests.TestInternal
 {
     internal static class EnumerableExtensions
     {
-        public static IEnumerable<object[]> ToTheoryData<T>(this IEnumerable<T> enumerable)
+        public static T MaxOrDefault<T>(this IEnumerable<T> source, T defaultValue = default(T))
         {
-            return enumerable.Select(x => new object[] { x });
+            return source.Any() ? source.Max() : defaultValue;
         }
 
-        public static IEnumerable<object[]> ToTheoryData<T1, T2>(this IEnumerable<(T1, T2)> enumerable)
+        public static T MinOrDefault<T>(this IEnumerable<T> source, T defaultValue = default(T))
         {
-            return enumerable.Select(x => new object[] { x.Item1, x.Item2 });
+            return source.Any() ? source.Min() : defaultValue;
+        }
+
+        public static IEnumerable<object[]> ToTheoryData<T>(this IEnumerable<T> source)
+        {
+            return source.Select(x => new object[] { x });
+        }
+
+        public static IEnumerable<object[]> ToTheoryData<T1, T2>(this IEnumerable<(T1, T2)> source)
+        {
+            return source.Select(x => new object[] { x.Item1, x.Item2 });
         }
     }
 }
