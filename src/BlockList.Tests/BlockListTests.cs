@@ -109,7 +109,28 @@ namespace Clever.Collections.Tests
             CheckOptions(list, options);
         }
 
-        // TODO: Contains tests
+        // TODO: Contains & others tests
+
+        [Fact]
+        public void GetEnumerator_Reset_ThrowsNotSupported()
+        {
+            IEnumerable enumerable = new BlockList<int>();
+            Assert.Throws<NotSupportedException>(() => enumerable.GetEnumerator().Reset());
+        }
+
+        [Fact]
+        public void ICollection_IsReadOnly_ReturnsFalse()
+        {
+            ICollection<int> collection = new BlockList<int>();
+            Assert.False(collection.IsReadOnly);
+        }
+
+        [Fact]
+        public void ICollection_Remove_ThrowsNotSupported()
+        {
+            ICollection<int> collection = new BlockList<int>();
+            Assert.Throws<NotSupportedException>(() => collection.Remove(item: 0));
+        }
 
         private static void CheckContents<T>(BlockList<T> list, IEnumerable<T> contents)
         {

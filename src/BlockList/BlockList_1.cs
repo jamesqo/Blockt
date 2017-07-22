@@ -197,7 +197,7 @@ namespace Clever.Collections
 
         bool ICollection<T>.IsReadOnly => false;
 
-        bool ICollection<T>.Remove(T item) => throw new NotImplementedException();
+        bool ICollection<T>.Remove(T item) => throw new NotSupportedException();
 
         IEnumerator<T> IEnumerable<T>.GetEnumerator() => GetEnumerator();
 
