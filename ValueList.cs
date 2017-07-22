@@ -5,7 +5,7 @@ using System.Diagnostics;
 
 namespace Blockt
 {
-    public struct ValueList<T> : IList<T>
+    internal struct ValueList<T>
     {
         private const int InitialCapacity = 4;
 
@@ -49,41 +49,6 @@ namespace Blockt
             }
         }
 
-        public bool Contains(T item) => IndexOf(item) >= 0;
-
-        public void CopyTo(T[] array, int arrayIndex)
-        {
-            if (_array != null)
-            {
-                Array.Copy(_array, 0, array, arrayIndex, _count);
-            }
-        }
-
-        public Enumerator GetEnumerator() => new Enumerator(this);
-
-        public int IndexOf(T item)
-            => _array == null ? -1 : Array.IndexOf(_array, item, 0, _count);
-
-        public void Insert(int index, T item)
-        {
-            if (_count == Capacity)
-            {
-                MakeRoom();
-            }
-
-            if (index < _count)
-            {
-                Array.Copy(_array, index, _array, index + 1, _count - index);
-            }
-
-            _array[index] = item;
-        }
-
-        public void RemoveAt(int index)
-        {
-            throw new NotImplementedException();
-        }
-
         private void MakeRoom()
         {
             Debug.Assert(_count == Capacity);
@@ -100,50 +65,6 @@ namespace Blockt
             }
             
             _array = newArray;
-        }
-
-        bool ICollection<T>.IsReadOnly => false;
-
-        bool ICollection<T>.Remove(T item) => throw new NotImplementedException();
-
-        IEnumerator<T> IEnumerable<T>.GetEnumerator() => GetEnumerator();
-
-        IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
-
-        public struct Enumerator : IEnumerator<T>
-        {
-            private readonly T[] _array;
-            private readonly int _count;
-            private int _index;
-
-            public Enumerator(ValueList<T> list)
-            {
-                _array = list._array;
-                _count = list._count;
-                _index = -1;
-            }
-
-            public T Current => _array[_index];
-
-            public void Dispose()
-            {
-            }
-
-            public bool MoveNext()
-            {
-                int nextIndex = _index + 1;
-                if (nextIndex < _count)
-                {
-                    _index = nextIndex;
-                    return true;
-                }
-
-                return false;
-            }
-
-            object IEnumerator.Current => Current;
-
-            void IEnumerator.Reset() => throw new NotSupportedException();
         }
     }
 }
