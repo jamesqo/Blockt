@@ -5,7 +5,7 @@ using System.Diagnostics;
 
 namespace Clever.Collections
 {
-    internal struct ValueList<T>
+    internal struct SmallList<T>
     {
         private const int InitialCapacity = 4;
 
@@ -38,15 +38,6 @@ namespace Clever.Collections
             }
 
             _array[_count++] = item;
-        }
-
-        public void Clear()
-        {
-            if (_array != null)
-            {
-                Array.Clear(_array, 0, _count);
-                _count = 0;
-            }
         }
 
         private void MakeRoom()

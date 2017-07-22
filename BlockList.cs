@@ -10,7 +10,7 @@ namespace Clever.Collections
         private const int InitialCapacity = 4;
 
         // This is a mutable struct field; do not make it readonly.
-        private ValueList<T[]> _blocks;
+        private SmallList<T[]> _blocks;
         private T[] _current;
         private int _index;
         private int _count;
