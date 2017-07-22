@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using Clever.Collections.Tests.TestInternal;
 using Xunit;
@@ -69,6 +70,15 @@ namespace Clever.Collections.Tests
 
         [Theory]
         [MemberData(nameof(TestEnumerablesAndOptions_Data))]
+        public void IsMoveable(IEnumerable<int> items, Options options)
+        {
+            bool expected = items.Count() <= options.InitialCapacity;
+            var list = new BlockList<int>(items, options);
+            Assert.Equal(expected, list.IsMoveable);
+        }
+
+        [Theory]
+        [MemberData(nameof(TestEnumerablesAndOptions_Data))]
         public void Add_AddRange(IEnumerable<int> items, Options options)
         {
             var list = new BlockList<int>(options);
@@ -110,6 +120,23 @@ namespace Clever.Collections.Tests
         }
 
         // TODO: Contains & others tests
+
+        [Theory]
+        [MemberData(nameof(TestEnumerablesAndOptions_Data))]
+        public void MoveToBlock(IEnumerable<int> items, Options options)
+        {
+            var list = new BlockList<int>(items, options);
+            if (!list.IsMoveable)
+            {
+                return;
+            }
+
+            var expected = Assert.Single(list.GetBlocks());
+            var actual = list.MoveToBlock();
+            Assert.Equal(expected, actual);
+
+            CheckEmptyList(list);
+        }
 
         [Fact]
         public void GetEnumerator_Reset_ThrowsNotSupported()

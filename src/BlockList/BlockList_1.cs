@@ -6,6 +6,7 @@ using static Clever.Collections.BlockList;
 
 namespace Clever.Collections
 {
+    // TODO: Consider implementing IList<T>
     public class BlockList<T> : ICollection<T>
     {
         // TODO: Add XML docs for everything.
@@ -48,9 +49,9 @@ namespace Clever.Collections
 
         public Options Options => _options;
 
-        private int HeadCapacity => _head.Length;
+        public bool IsMoveable => BlockCount == 1;
 
-        public bool IsMoveable => BlockCount == 1 && IsHeadFull;
+        private int HeadCapacity => _head.Length;
 
         private ArraySegment<T> HeadSpan => new ArraySegment<T>(_head, 0, _headCount);
 
@@ -145,12 +146,12 @@ namespace Clever.Collections
 
         public Enumerator GetEnumerator() => new Enumerator(this);
 
-        public T[] MoveToArray()
+        public ArraySegment<T> MoveToBlock()
         {
             // TODO: Throw here instead.
             Debug.Assert(IsMoveable);
 
-            var result = _head;
+            var result = HeadSpan;
             _head = Array.Empty<T>();
 
             _headCount = 0;
