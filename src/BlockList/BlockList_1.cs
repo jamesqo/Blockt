@@ -6,11 +6,8 @@ using static Clever.Collections.BlockList;
 
 namespace Clever.Collections
 {
-    // TODO: Consider implementing IList<T>
     public class BlockList<T> : ICollection<T>
     {
-        // TODO: Add XML docs for everything.
-
         private readonly Options _options;
 
         private SmallList<T[]> _tail; // This is a mutable struct field; do not make it readonly.
@@ -148,7 +145,6 @@ namespace Clever.Collections
 
         public ArraySegment<T> MoveToBlock()
         {
-            // TODO: Throw here instead.
             Debug.Assert(IsMoveable);
 
             var result = HeadSpan;
