@@ -5,11 +5,22 @@ using System.Diagnostics;
 
 namespace Clever.Collections
 {
+    public static class BlockList
+    {
+        public static BlockListOptions DefaultOptions { get; } =
+            Options(initialCapacity: 32);
+
+        public static BlockListOptions Options(int initialCapacity)
+        {
+            return new BlockListOptions(initialCapacity);
+        }
+    }
+
     public class BlockList<T> : ICollection<T>
     {
         // TODO: Add XML docs for everything.
 
-        private readonly int _initialCapacity;
+        private readonly BlockListOptions _options;
 
         private SmallList<T[]> _tail; // This is a mutable struct field; do not make it readonly.
         private T[] _head;
@@ -18,26 +29,23 @@ namespace Clever.Collections
         private int _capacity;
         
         public BlockList()
-            : this(initialCapacity: 32)
+            : this(BlockList.DefaultOptions)
         {
         }
 
-        public BlockList(int initialCapacity)
+        public BlockList(BlockListOptions options)
         {
-            Debug.Assert(initialCapacity > 0);
-
             _head = Array.Empty<T>();
-            _initialCapacity = initialCapacity;
+            _options = options;
         }
 
         public BlockList(IEnumerable<T> enumerable)
-            : this()
+            : this(enumerable, BlockList.DefaultOptions)
         {
-            AddRange(enumerable);
         }
 
-        public BlockList(int initialCapacity, IEnumerable<T> enumerable)
-            : this(initialCapacity)
+        public BlockList(IEnumerable<T> enumerable, BlockListOptions options)
+            : this(options)
         {
             AddRange(enumerable);
         }
@@ -47,6 +55,8 @@ namespace Clever.Collections
         public int Capacity => _capacity;
 
         public int Count => _count;
+
+        public BlockListOptions Options => _options;
 
         private int HeadCapacity => _head.Length;
 
@@ -64,6 +74,7 @@ namespace Clever.Collections
             }
 
             _head[_headCount++] = item;
+            _count++;
         }
 
         public void AddRange(IEnumerable<T> enumerable)
@@ -158,18 +169,19 @@ namespace Clever.Collections
         {
             Debug.Assert(IsHeadFull);
 
+            int initialCapacity = _options.InitialCapacity;
             if (_count == 0)
             {
-                _head = new T[_initialCapacity];
-                _capacity = _initialCapacity;
+                _head = new T[initialCapacity];
+                _capacity = initialCapacity;
                 return;
             }
 
             _tail.Add(_head);
             // We want to increase the block sizes geometrically, but not on the first resize.
             // This ensures we never waste more than 50% of the memory we've allocated.
-            int nextCapacity = _capacity == _initialCapacity
-                ? _initialCapacity
+            int nextCapacity = _capacity == initialCapacity
+                ? initialCapacity
                 : HeadCapacity * 2;
             _head = new T[nextCapacity];
             _headCount = 0;
@@ -208,20 +220,18 @@ namespace Clever.Collections
 
             public bool MoveNext()
             {
-                int elementIndex = _elementIndex + 1;
-                if (elementIndex == _currentBlock.Count)
+                if (_elementIndex + 1 == _currentBlock.Count)
                 {
-                    int blockIndex = _blockIndex + 1;
-                    if (blockIndex == _list.BlockCount)
+                    if (_blockIndex + 1 == _list.BlockCount)
                     {
                         return false;
                     }
 
-                    _currentBlock = _list.GetBlock(blockIndex);
-                    _blockIndex = blockIndex;
+                    _currentBlock = _list.GetBlock(++_blockIndex);
+                    _elementIndex = -1;
                 }
 
-                _elementIndex = elementIndex;
+                _elementIndex++;
                 return true;
             }
 
