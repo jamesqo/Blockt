@@ -3,7 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 
-namespace Blockt
+namespace Clever.Collections
 {
     public class BlockList<T> : ICollection<T>
     {
