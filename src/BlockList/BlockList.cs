@@ -11,11 +11,11 @@ namespace Clever.Collections
 
         private readonly int _initialCapacity;
 
-        // This is a mutable struct field; do not make it readonly.
-        private SmallList<T[]> _tail;
+        private SmallList<T[]> _tail; // This is a mutable struct field; do not make it readonly.
         private T[] _head;
         private int _headCount;
         private int _count;
+        private int _capacity;
         
         public BlockList()
             : this(initialCapacity: 32)
@@ -36,6 +36,8 @@ namespace Clever.Collections
         }
 
         public int BlockCount => TailCount + 1;
+
+        public int Capacity => _capacity;
 
         public int Count => _count;
 
@@ -78,6 +80,7 @@ namespace Clever.Collections
 
             _headCount = 0;
             _count = 0;
+            _capacity = 0;
         }
 
         public bool Contains(T item)
@@ -146,13 +149,16 @@ namespace Clever.Collections
             if (_count == 0)
             {
                 _head = new T[_initialCapacity];
+                _capacity = _initialCapacity;
                 return;
             }
 
             _tail.Add(_head);
+            // TODO: We're not supposed to 32 64, we're supposed to 32 32 64.
             int nextCapacity = HeadCapacity * 2;
             _head = new T[nextCapacity];
             _headCount = 0;
+            _capacity += nextCapacity;
         }
 
         bool ICollection<T>.IsReadOnly => false;
