@@ -73,6 +73,11 @@ namespace Clever.Collections.Internal
         }
 
         /// <summary>
+        /// Gets an enumerator that iterates through this list.
+        /// </summary>
+        public Enumerator GetEnumerator() => new Enumerator(_array, _count);
+
+        /// <summary>
         /// Resizes this list when it is full.
         /// </summary>
         private void MakeRoom()
@@ -91,6 +96,24 @@ namespace Clever.Collections.Internal
             }
             
             _array = newArray;
+        }
+
+        public struct Enumerator
+        {
+            private readonly T[] _array;
+            private readonly int _count;
+            private int _index;
+
+            internal Enumerator(T[] array, int count)
+            {
+                _array = array;
+                _count = count;
+                _index = -1;
+            }
+
+            public T Current => _array[_index];
+
+            public bool MoveNext() => ++_index < _count;
         }
     }
 }

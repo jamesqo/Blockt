@@ -108,9 +108,8 @@ namespace Clever.Collections
 
         public bool Contains(T item)
         {
-            for (int i = 0; i < TailCount; i++)
+            foreach (T[] block in _tail)
             {
-                T[] block = _tail[i];
                 if (Array.IndexOf(block, item) >= 0)
                 {
                     return true;
@@ -125,9 +124,8 @@ namespace Clever.Collections
             Verify.NotNull(array, nameof(array));
             Verify.InRange(arrayIndex >= 0 && array.Length - arrayIndex >= _count, nameof(arrayIndex));
 
-            for (int i = 0; i < TailCount; i++)
+            foreach (T[] block in _tail)
             {
-                T[] block = _tail[i];
                 Array.Copy(block, 0, array, arrayIndex, block.Length);
                 arrayIndex += block.Length;
             }
@@ -165,9 +163,8 @@ namespace Clever.Collections
         {
             Verify.InRange(index >= 0 && index < _count, nameof(index));
 
-            for (int i = 0; i < TailCount; i++)
+            foreach (T[] block in _tail)
             {
-                T[] block = _tail[i];
                 if (index < block.Length)
                 {
                     return ref block[index];
@@ -182,9 +179,8 @@ namespace Clever.Collections
         public int IndexOf(T item)
         {
             int processed = 0;
-            for (int i = 0; i < TailCount; i++)
+            foreach (T[] block in _tail)
             {
-                T[] block = _tail[i];
                 int index = Array.IndexOf(block, item);
                 if (index >= 0)
                 {
