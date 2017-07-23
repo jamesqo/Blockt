@@ -93,6 +93,24 @@ namespace Clever.Collections.Tests
 
         [Theory]
         [MemberData(nameof(TestEnumerablesAndOptions_Data))]
+        public void Indexer(IEnumerable<int> items, Options options)
+        {
+            var list = new BlockList<int>(items, options);
+            var array = items.ToArray();
+            int excluded = checked(list.MaxOrDefault() + 1);
+
+            for (int i = 0; i < list.Count; i++)
+            {
+                Assert.Equal(array[i], list[i]);
+                list[i] = excluded;
+                Assert.Equal(excluded, list[i]);
+                list[i] = array[i];
+                Assert.Equal(array[i], list[i]);
+            }
+        }
+
+        [Theory]
+        [MemberData(nameof(TestEnumerablesAndOptions_Data))]
         public void Add_AddRange(IEnumerable<int> items, Options options)
         {
             var list = new BlockList<int>(options);
