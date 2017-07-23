@@ -44,21 +44,21 @@ namespace Clever.Collections
 
         public int Count => _count;
 
-        public Options Options => _options;
+        public bool IsFull => _count == _capacity;
 
         public bool IsMoveable => BlockCount == 1;
+
+        public Options Options => _options;
 
         private int HeadCapacity => _head.Length;
 
         private ArraySegment<T> HeadSpan => new ArraySegment<T>(_head, 0, _headCount);
 
-        private bool IsHeadFull => _headCount == HeadCapacity;
-
         private int TailCount => _tail.Count;
 
         public void Add(T item)
         {
-            if (IsHeadFull)
+            if (IsFull)
             {
                 MakeRoom();
             }
@@ -171,7 +171,7 @@ namespace Clever.Collections
 
         private void MakeRoom()
         {
-            Debug.Assert(IsHeadFull);
+            Debug.Assert(IsFull);
 
             int initialCapacity = _options.InitialCapacity;
             if (_count == 0)
