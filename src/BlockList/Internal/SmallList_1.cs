@@ -40,6 +40,8 @@ namespace Clever.Collections.Internal
 
         private string DebuggerDisplay => $"{nameof(Count)} = {Count}";
 
+        public bool IsEmpty => _count == 0;
+
         /// <summary>
         /// Gets a value indicating whether this list is full.
         /// </summary>
@@ -82,6 +84,13 @@ namespace Clever.Collections.Internal
         /// Gets an enumerator that iterates through this list.
         /// </summary>
         public Enumerator GetEnumerator() => new Enumerator(_array, _count);
+
+        public T RemoveLast()
+        {
+            Debug.Assert(!IsEmpty);
+
+            return _array[--_count];
+        }
 
         /// <summary>
         /// Resizes this list when it is full.

@@ -94,20 +94,20 @@ namespace Clever.Collections
 
         public void Clear()
         {
-            for (int i = 0; i < _tail.Count; i++)
+            // TODO: Add more comments
+            var head = _head;
+            int headCount = _headCount;
+            var tail = _tail;
+            Reset();
+
+            Array.Clear(head, 0, headCount);
+
+            for (int i = 0; i < tail.Count; i++)
             {
-                T[] block = _tail[i];
-                _tail[i] = null;
+                T[] block = tail[i];
+                tail[i] = null;
                 Array.Clear(block, 0, block.Length);
             }
-            _tail = new SmallList<T[]>();
-
-            Array.Clear(_head, 0, _headCount);
-            _head = Array.Empty<T>();
-
-            _headCount = 0;
-            _count = 0;
-            _capacity = 0;
         }
 
         public bool Contains(T item) => IndexOf(item) != -1;
@@ -272,16 +272,33 @@ namespace Clever.Collections
             Verify.ValidState(IsContiguous, Strings.MoveToBlock_NotContiguous);
 
             var result = HeadSpan;
-            _head = Array.Empty<T>();
-
-            _headCount = 0;
-            _count = 0;
-            _capacity = 0;
-
+            Reset();
             return result;
         }
 
-        public void RemoveAt(int index) => throw new NotImplementedException();
+        public void RemoveAt(int index)
+        {
+            Verify.InRange(index >= 0 && index < _count, nameof(index));
+
+            if (index != _count - 1)
+            {
+                var removePos = GetPosition(index);
+
+                // At _tail.Count: shift end left, remove last
+                // At tc - 1: shift end left, shift first left, shift left, remove last
+
+                ShiftEndLeft(removePos.BlockIndex, removePos.ElementIndex);
+
+                int blockIndex = removePos.BlockIndex + 1;
+                while (blockIndex <= _tail.Count)
+                {
+                    ShiftFirstLeft(blockIndex);
+                    ShiftLeft(blockIndex);
+                }
+            }
+
+            RemoveLast();
+        }
 
         public T[] ToArray()
         {
@@ -321,6 +338,37 @@ namespace Clever.Collections
             return new Position(blockIndex, elementIndex);
         }
 
+        private void RemoveLast()
+        {
+            Debug.Assert(!IsEmpty);
+
+            _count--;
+            _head[--_headCount] = default(T);
+
+            if (_headCount == 0)
+            {
+                if (_tail.IsEmpty)
+                {
+                    Reset();
+                }
+                else
+                {
+                    _head = _tail.RemoveLast();
+                    _headCount = _head.Length;
+                }
+                Debug.Assert(IsFull);
+            }
+        }
+
+        private void Reset()
+        {
+            _tail = new SmallList<T[]>();
+            _head = Array.Empty<T>();
+            _headCount = 0;
+            _count = 0;
+            _capacity = 0;
+        }
+
         private void Resize()
         {
             Debug.Assert(IsFull);
@@ -344,10 +392,27 @@ namespace Clever.Collections
             _capacity += nextCapacity;
         }
 
+        private void ShiftEndLeft(int blockIndex, int elementIndex)
+        {
+            var block = GetBlock(blockIndex);
+            Array.Copy(block.Array, elementIndex + 1, block.Array, elementIndex, block.Count - elementIndex - 1);
+        }
+
         private void ShiftEndRight(int blockIndex, int elementIndex)
         {
             var block = GetBlock(blockIndex);
             Array.Copy(block.Array, elementIndex, block.Array, elementIndex + 1, block.Count - elementIndex - 1);
+        }
+
+        private void ShiftFirstLeft(int blockIndex)
+        {
+            Debug.Assert(blockIndex > 0);
+
+            var block = GetBlock(blockIndex);
+            var predecessor = _tail[blockIndex - 1];
+            Debug.Assert(!block.IsEmpty && predecessor.Length > 0);
+
+            predecessor[predecessor.Length - 1] = block.First();
         }
 
         private void ShiftLastRight(int blockIndex)
@@ -359,6 +424,12 @@ namespace Clever.Collections
             Debug.Assert(block.Length > 0 && !successor.IsEmpty);
 
             successor[0] = block.Last();
+        }
+
+        private void ShiftLeft(int blockIndex)
+        {
+            var block = GetBlock(blockIndex);
+            Array.Copy(block.Array, 1, block.Array, 0, block.Count - 1);
         }
 
         private void ShiftRight(int blockIndex)
