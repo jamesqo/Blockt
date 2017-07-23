@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using Clever.Collections.Tests.TestInternal;
 using Xunit;
@@ -21,7 +22,7 @@ namespace Clever.Collections.Tests
         public static IEnumerable<object[]> TestOptions_Data()
             => TestOptions.ToTheoryData();
 
-        private static IEnumerable<(IEnumerable<int>, Options)> TestEnumerablesAndOptions
+        private static IEnumerable<(IEnumerable<int> items, Options options)> TestEnumerablesAndOptions
             => TestOptions.SelectMany(
                 opts => GetTestEnumerables(opts).Select(
                     items => (items, opts)));
@@ -179,6 +180,43 @@ namespace Clever.Collections.Tests
             IEnumerable enumerable = new BlockList<int>();
             Assert.Throws<NotSupportedException>(() => enumerable.GetEnumerator().Reset());
         }
+
+        [Theory]
+        [MemberData(nameof(Insert_Data))]
+        public void Insert(IEnumerable<int> items, Options options, int index, int item)
+        {
+            var expected = items.Take(index).Append(item).Concat(items.Skip(index));
+            var list = new BlockList<int>(items, options);
+            list.Insert(index, item);
+            Assert.Equal(expected, list);
+        }
+
+        public static IEnumerable<object[]> Insert_Data()
+            => TestEnumerablesAndOptions.SelectMany(x =>
+            {
+                var (items, options) = x;
+                int excluded = checked(items.MaxOrDefault() + 1);
+                var testCases = ImmutableArray.Create(
+                    (items, options, index: 0, item: excluded));
+
+                if (items.Any())
+                {
+                    testCases.AddRange(new[]
+                    {
+                        (items, options, index: 1, item: excluded),
+                        (items, options, index: items.Count() / 4, item: excluded),
+                        (items, options, index: items.Count() / 4 + 1, item: excluded),
+                        (items, options, index: items.Count() / 2, item: excluded),
+                        (items, options, index: items.Count() / 2 + 1, item: excluded),
+                        (items, options, index: 3 * items.Count() / 4, item: excluded),
+                        (items, options, index: 3 * items.Count() / 4 + 1, item: excluded),
+                        (items, options, index: items.Count() - 1, item: excluded)
+                    });
+                }
+
+                return testCases;
+            })
+            .ToTheoryData();
 
         [Theory]
         [MemberData(nameof(TestEnumerablesAndOptions_Data))]
