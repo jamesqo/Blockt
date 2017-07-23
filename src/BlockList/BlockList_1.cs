@@ -7,8 +7,8 @@ using static Clever.Collections.BlockList;
 
 namespace Clever.Collections
 {
-    // TODO: Add a DebuggerTypeProxy.
     [DebuggerDisplay(DebuggerStrings.DisplayFormat)]
+    [DebuggerTypeProxy(typeof(EnumerableDebuggerProxy<>))]
     public partial class BlockList<T> : IList<T>, IReadOnlyList<T>
     {
         private readonly Options _options;

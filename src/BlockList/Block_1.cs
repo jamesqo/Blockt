@@ -15,6 +15,7 @@ using SystemArray = System.Array;
 namespace Clever.Collections
 {
     [DebuggerDisplay(DebuggerStrings.DisplayFormat)]
+    [DebuggerTypeProxy(typeof(EnumerableDebuggerProxy<>))]
     public partial struct Block<T> : IList<T>, IReadOnlyList<T>
     {
         internal Block(T[] array)
