@@ -226,14 +226,14 @@ namespace Clever.Collections
             // since we must also add the last item after ShiftEnd() is called.
             if (insertPos.BlockIndex == _tail.Count)
             {
-                ShiftEnd(_tail.Count, insertPos.ElementIndex);
+                ShiftEndRight(_tail.Count, insertPos.ElementIndex);
                 // This must run first in case _head changes during Add.
                 _head[insertPos.ElementIndex] = item;
                 Add(last);
                 return;
             }
 
-            Shift(_tail.Count);
+            ShiftRight(_tail.Count);
 
             {
                 int blockIndex = _tail.Count - 1;
@@ -246,16 +246,16 @@ namespace Clever.Collections
 
                 while (true)
                 {
-                    ShiftLast(blockIndex);
+                    ShiftLastRight(blockIndex);
                     if (blockIndex == insertPos.BlockIndex)
                     {
                         break;
                     }
-                    Shift(blockIndex);
+                    ShiftRight(blockIndex);
                     blockIndex--;
                 }
 
-                ShiftEnd(blockIndex, insertPos.ElementIndex);
+                ShiftEndRight(blockIndex, insertPos.ElementIndex);
                 _tail[blockIndex][insertPos.ElementIndex] = item;
             }
         }
@@ -343,20 +343,14 @@ namespace Clever.Collections
             _headCount = 0;
             _capacity += nextCapacity;
         }
-        
-        private void Shift(int blockIndex)
-        {
-            var block = GetBlock(blockIndex);
-            Array.Copy(block.Array, 0, block.Array, 1, block.Count - 1);
-        }
 
-        private void ShiftEnd(int blockIndex, int elementIndex)
+        private void ShiftEndRight(int blockIndex, int elementIndex)
         {
             var block = GetBlock(blockIndex);
             Array.Copy(block.Array, elementIndex, block.Array, elementIndex + 1, block.Count - elementIndex - 1);
         }
 
-        private void ShiftLast(int blockIndex)
+        private void ShiftLastRight(int blockIndex)
         {
             Debug.Assert(blockIndex < _tail.Count);
 
@@ -365,6 +359,12 @@ namespace Clever.Collections
             Debug.Assert(block.Length > 0 && !successor.IsEmpty);
 
             successor[0] = block.Last();
+        }
+
+        private void ShiftRight(int blockIndex)
+        {
+            var block = GetBlock(blockIndex);
+            Array.Copy(block.Array, 0, block.Array, 1, block.Count - 1);
         }
 
         bool ICollection<T>.IsReadOnly => false;
