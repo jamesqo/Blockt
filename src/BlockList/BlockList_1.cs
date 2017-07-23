@@ -303,7 +303,6 @@ namespace Clever.Collections
                 elementIndex -= block.Length;
             }
 
-            // TODO: Change other places to use == -1.
             if (blockIndex == -1)
             {
                 Debug.Assert(elementIndex < _headCount);
