@@ -7,7 +7,7 @@ using static Clever.Collections.BlockList;
 
 namespace Clever.Collections
 {
-    public partial class BlockList<T> : IList<T>
+    public partial class BlockList<T> : IList<T>, IReadOnlyList<T>
     {
         private readonly Options _options;
 
