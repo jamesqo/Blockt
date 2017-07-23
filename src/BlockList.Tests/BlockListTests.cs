@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using Clever.Collections.Tests.TestInternal;
 using Xunit;
@@ -157,6 +156,51 @@ namespace Clever.Collections.Tests
 
         [Theory]
         [MemberData(nameof(TestEnumerablesAndOptions_Data))]
+        public void First(IEnumerable<int> items, Options options)
+        {
+            var list = new BlockList<int>(items, options);
+            if (list.IsEmpty)
+            {
+                return;
+            }
+
+            Assert.Equal(Enumerable.First(list), list.First());
+        }
+
+        [Fact]
+        public void First_Empty_ThrowsInvalidOperation()
+        {
+            Assert.Throws<InvalidOperationException>(() => new BlockList<int>().First());
+        }
+
+        [Fact]
+        public void GetEnumerator_Reset_ThrowsNotSupported()
+        {
+            IEnumerable enumerable = new BlockList<int>();
+            Assert.Throws<NotSupportedException>(() => enumerable.GetEnumerator().Reset());
+        }
+
+        [Theory]
+        [MemberData(nameof(TestEnumerablesAndOptions_Data))]
+        public void Last(IEnumerable<int> items, Options options)
+        {
+            var list = new BlockList<int>(items, options);
+            if (list.IsEmpty)
+            {
+                return;
+            }
+
+            Assert.Equal(Enumerable.Last(list), list.Last());
+        }
+
+        [Fact]
+        public void Last_Empty_ThrowsInvalidOperation()
+        {
+            Assert.Throws<InvalidOperationException>(() => new BlockList<int>().Last());
+        }
+
+        [Theory]
+        [MemberData(nameof(TestEnumerablesAndOptions_Data))]
         public void MoveToBlock(IEnumerable<int> items, Options options)
         {
             var list = new BlockList<int>(items, options);
@@ -170,13 +214,6 @@ namespace Clever.Collections.Tests
             Assert.Equal(expected, actual);
 
             CheckEmptyList(list);
-        }
-
-        [Fact]
-        public void GetEnumerator_Reset_ThrowsNotSupported()
-        {
-            IEnumerable enumerable = new BlockList<int>();
-            Assert.Throws<NotSupportedException>(() => enumerable.GetEnumerator().Reset());
         }
 
         [Fact]
