@@ -1,7 +1,7 @@
 using System;
 using System.Diagnostics;
 
-namespace Clever.Collections
+namespace Clever.Collections.Internal
 {
     /// <summary>
     /// A list optimized for a small number of items.
