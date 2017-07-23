@@ -5,14 +5,15 @@
 // The implementation of this type was copied from the source of ArraySegment<T> at:
 // https://github.com/dotnet/coreclr/blob/b3e859cb5777bb68dd15caac75ee861da98489ae/src/mscorlib/src/System/ArraySegment.cs.
 
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using Clever.Collections.Internal;
 using SystemArray = System.Array;
 
-namespace System
+namespace Clever.Collections
 {
-    public struct Block<T> : IList<T>, IReadOnlyList<T>
+    public partial struct Block<T> : IList<T>, IReadOnlyList<T>
     {
         internal Block(T[] array)
         {
@@ -117,32 +118,5 @@ namespace System
         IEnumerator<T> IEnumerable<T>.GetEnumerator() => GetEnumerator();
 
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
-
-        public struct Enumerator : IEnumerator<T>
-        {
-            private readonly T[] _array;
-            private readonly int _count;
-
-            private int _index;
-
-            internal Enumerator(T[] array, int count)
-            {
-                _array = array;
-                _count = count;
-                _index = -1;
-            }
-
-            public T Current => _array[_index];
-
-            public void Dispose()
-            {
-            }
-
-            public bool MoveNext() => ++_index < _count;
-
-            object IEnumerator.Current => Current;
-
-            void IEnumerator.Reset() => throw new NotSupportedException();
-        }
     }
 }

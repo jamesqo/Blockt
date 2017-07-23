@@ -7,7 +7,7 @@ namespace Clever.Collections.Internal
     /// A list optimized for a small number of items.
     /// </summary>
     /// <typeparam name="T">The type of the items.</typeparam>
-    internal struct SmallList<T>
+    internal partial struct SmallList<T>
     {
         /// <summary>
         /// The size of this list's buffer after the first item is added.
@@ -96,24 +96,6 @@ namespace Clever.Collections.Internal
             }
             
             _array = newArray;
-        }
-
-        public struct Enumerator
-        {
-            private readonly T[] _array;
-            private readonly int _count;
-            private int _index;
-
-            internal Enumerator(T[] array, int count)
-            {
-                _array = array;
-                _count = count;
-                _index = -1;
-            }
-
-            public T Current => _array[_index];
-
-            public bool MoveNext() => ++_index < _count;
         }
     }
 }
