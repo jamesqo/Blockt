@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using Clever.Collections.Tests.TestInternal;
 using Xunit;
@@ -118,37 +119,45 @@ namespace Clever.Collections.Tests
 
         [Theory]
         [MemberData(nameof(TestEnumerablesAndOptions_Data))]
-        public void Contains_True(IEnumerable<int> items, Options options)
+        public void Contains_IndexOf_Found(IEnumerable<int> items, Options options)
         {
+            Debug.Assert(!items.ContainsDuplicates());
+
             var list = new BlockList<int>(items, options);
-            Assert.All(list, item =>
+
+            int index = 0;
+            foreach (int item in items)
             {
                 Assert.True(list.Contains(item));
-            });
+                Assert.Equal(index++, list.IndexOf(item));
+            }
         }
 
         [Theory]
         [MemberData(nameof(TestEnumerablesAndOptions_Data))]
-        public void Contains_False(IEnumerable<int> items, Options options)
+        public void Contains_IndexOf_NotFound(IEnumerable<int> items, Options options)
         {
             var list = new BlockList<int>(items, options);
             var excluded = new[] { checked(list.MaxOrDefault() + 1), checked(list.MinOrDefault() - 1) };
             Assert.All(excluded, item =>
             {
                 Assert.False(list.Contains(item));
+                Assert.Equal(-1, list.IndexOf(item));
             });
         }
 
         [Theory]
         [MemberData(nameof(TestEnumerablesAndOptions_Data))]
-        public void Contains_DefaultValue_NoFalsePositive(IEnumerable<int> items, Options options)
+        public void Contains_IndexOf_DefaultValue_NoFalsePositive(IEnumerable<int> items, Options options)
         {
-            // This is a regression test. If the BlockList isn't full, then there will be some
-            // trailing default-initialized slots in the head block. Contains() must take care
-            // not to search those slots for the item, since they're not part of the list's contents.
+            // This is a regression test. If the BlockList isn't full, then there will be some trailing
+            // default-initialized slots in the head block. Contains() and IndexOf() must take care not
+            // to search those slots for the item, since they're not part of the list's contents.
             items = items.Where(x => x != 0);
             var list = new BlockList<int>(items, options);
+
             Assert.False(list.Contains(0));
+            Assert.Equal(-1, list.IndexOf(0));
         }
 
         [Theory]
