@@ -79,6 +79,20 @@ namespace Clever.Collections.Tests
 
         [Theory]
         [MemberData(nameof(TestEnumerablesAndOptions_Data))]
+        public void IsFull(IEnumerable<int> items, Options options)
+        {
+            // The list is full when there are no elements (the head block is a cached empty array) or
+            // the count is exactly n * 2^i, where n is the initial capacity and i is an integer.
+            bool expected =
+                !items.Any() ||
+                Math.Log((double)items.Count() / options.InitialCapacity, 2).IsInteger();
+
+            var list = new BlockList<int>(items, options);
+            Assert.Equal(expected, list.IsFull);
+        }
+
+        [Theory]
+        [MemberData(nameof(TestEnumerablesAndOptions_Data))]
         public void Add_AddRange(IEnumerable<int> items, Options options)
         {
             var list = new BlockList<int>(options);
