@@ -7,6 +7,7 @@ using static Clever.Collections.BlockList;
 
 namespace Clever.Collections
 {
+    // TODO: Add a DebuggerTypeProxy.
     [DebuggerDisplay(DebuggerStrings.DisplayFormat)]
     public partial class BlockList<T> : IList<T>, IReadOnlyList<T>
     {
@@ -226,19 +227,22 @@ namespace Clever.Collections
             if (insertPos.BlockIndex == _tail.Count)
             {
                 ShiftEnd(_tail.Count, insertPos.ElementIndex);
-                Add(last);
+                // This must run first in case _head changes during Add.
                 _head[insertPos.ElementIndex] = item;
+                Add(last);
                 return;
             }
 
             Shift(_tail.Count);
-            Add(last);
 
             {
                 int blockIndex = _tail.Count - 1;
                 // Since the insert position wasn't in the head block, it must be in a block
                 // preceding the head block, and that means there are multiple blocks.
                 Debug.Assert(blockIndex >= 0);
+
+                // Add() must run after calculating blockIndex, in case it affects _tail.Count.
+                Add(last);
 
                 while (true)
                 {
