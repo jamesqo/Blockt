@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Collections.Immutable;
 using System.Linq;
 using Clever.Collections.Tests.TestInternal;
 using Xunit;
@@ -196,12 +195,14 @@ namespace Clever.Collections.Tests
             {
                 var (items, options) = x;
                 int excluded = checked(items.MaxOrDefault() + 1);
-                var testCases = ImmutableArray.Create(
-                    (items, options, index: 0, item: excluded));
+                var testCases = new[]
+                {
+                    (items, options, index: 0, item: excluded)
+                };
 
                 if (items.Any())
                 {
-                    testCases.AddRange(new[]
+                    testCases = testCases.Concat(new[]
                     {
                         (items, options, index: 1, item: excluded),
                         (items, options, index: items.Count() / 4, item: excluded),
@@ -211,7 +212,8 @@ namespace Clever.Collections.Tests
                         (items, options, index: 3 * items.Count() / 4, item: excluded),
                         (items, options, index: 3 * items.Count() / 4 + 1, item: excluded),
                         (items, options, index: items.Count() - 1, item: excluded)
-                    });
+                    })
+                    .ToArray();
                 }
 
                 return testCases;
