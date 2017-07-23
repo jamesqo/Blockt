@@ -70,11 +70,11 @@ namespace Clever.Collections.Tests
 
         [Theory]
         [MemberData(nameof(TestEnumerablesAndOptions_Data))]
-        public void IsMoveable(IEnumerable<int> items, Options options)
+        public void IsContiguous(IEnumerable<int> items, Options options)
         {
             bool expected = items.Count() <= options.InitialCapacity;
             var list = new BlockList<int>(items, options);
-            Assert.Equal(expected, list.IsMoveable);
+            Assert.Equal(expected, list.IsContiguous);
         }
 
         [Theory]
@@ -159,7 +159,7 @@ namespace Clever.Collections.Tests
         public void MoveToBlock(IEnumerable<int> items, Options options)
         {
             var list = new BlockList<int>(items, options);
-            if (!list.IsMoveable)
+            if (!list.IsContiguous)
             {
                 return;
             }

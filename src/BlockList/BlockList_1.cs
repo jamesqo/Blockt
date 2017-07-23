@@ -24,6 +24,8 @@ namespace Clever.Collections
 
         public BlockList(Options options)
         {
+            Verify.NotNull(options, nameof(options));
+
             _head = Array.Empty<T>();
             _options = options;
         }
@@ -45,9 +47,9 @@ namespace Clever.Collections
 
         public int Count => _count;
 
-        public bool IsFull => _count == _capacity;
+        public bool IsContiguous => BlockCount == 1;
 
-        public bool IsMoveable => BlockCount == 1;
+        public bool IsFull => _count == _capacity;
 
         public Options Options => _options;
 
@@ -70,6 +72,8 @@ namespace Clever.Collections
 
         public void AddRange(IEnumerable<T> items)
         {
+            Verify.NotNull(items, nameof(items));
+
             foreach (T item in items)
             {
                 Add(item);
@@ -110,6 +114,9 @@ namespace Clever.Collections
 
         public void CopyTo(T[] array, int arrayIndex)
         {
+            Verify.NotNull(array, nameof(array));
+            Verify.InRange(arrayIndex >= 0 && array.Length - arrayIndex >= _count, nameof(arrayIndex));
+
             for (int i = 0; i < TailCount; i++)
             {
                 T[] block = _tail[i];
@@ -122,6 +129,8 @@ namespace Clever.Collections
 
         public ArraySegment<T> GetBlock(int index)
         {
+            Verify.InRange(index >= 0 && index < BlockCount, nameof(index));
+
             if (index < TailCount)
             {
                 return new ArraySegment<T>(_tail[index]);
@@ -146,7 +155,7 @@ namespace Clever.Collections
 
         public ArraySegment<T> MoveToBlock()
         {
-            Debug.Assert(IsMoveable);
+            Verify.ValidState(IsContiguous, Strings.MoveToBlock_NotContiguous);
 
             var result = HeadSpan;
             _head = Array.Empty<T>();

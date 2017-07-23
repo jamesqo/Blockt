@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
+using Clever.Collections.Internal;
 
 namespace Clever.Collections
 {
@@ -9,7 +10,7 @@ namespace Clever.Collections
         {
             internal Options(int initialCapacity)
             {
-                Debug.Assert(initialCapacity > 0);
+                Verify.InRange(initialCapacity > 0, nameof(initialCapacity));
 
                 InitialCapacity = initialCapacity;
             }
