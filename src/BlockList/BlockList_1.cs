@@ -57,7 +57,7 @@ namespace Clever.Collections
 
         private int HeadCapacity => _head.Length;
 
-        private ArraySegment<T> HeadSpan => new ArraySegment<T>(_head, 0, _headCount);
+        private Block<T> HeadSpan => new Block<T>(_head, _headCount);
 
         public T this[int index]
         {
@@ -133,30 +133,30 @@ namespace Clever.Collections
 
         public T First()
         {
-            Verify.ValidState(!IsEmpty, Strings.First_EmptyList);
+            Verify.ValidState(!IsEmpty, Strings.First_EmptyCollection);
 
             return GetBlock(0).Array[0];
         }
 
-        public ArraySegment<T> GetBlock(int index)
+        public Block<T> GetBlock(int index)
         {
             Verify.InRange(index >= 0 && index < BlockCount, nameof(index));
 
             if (index < _tail.Count)
             {
-                return new ArraySegment<T>(_tail[index]);
+                return new Block<T>(_tail[index]);
             }
 
             Debug.Assert(index == _tail.Count);
             return HeadSpan;
         }
 
-        public ArraySegment<T>[] GetBlocks()
+        public Block<T>[] GetBlocks()
         {
-            var blocks = new ArraySegment<T>[BlockCount];
+            var blocks = new Block<T>[BlockCount];
             for (int i = 0; i < _tail.Count; i++)
             {
-                blocks[i] = new ArraySegment<T>(_tail[i]);
+                blocks[i] = new Block<T>(_tail[i]);
             }
             blocks[_tail.Count] = HeadSpan;
             return blocks;
@@ -202,12 +202,12 @@ namespace Clever.Collections
 
         public T Last()
         {
-            Verify.ValidState(!IsEmpty, Strings.Last_EmptyList);
+            Verify.ValidState(!IsEmpty, Strings.Last_EmptyCollection);
 
             return _head[_headCount - 1];
         }
 
-        public ArraySegment<T> MoveToBlock()
+        public Block<T> MoveToBlock()
         {
             Verify.ValidState(IsContiguous, Strings.MoveToBlock_NotContiguous);
 
@@ -269,7 +269,7 @@ namespace Clever.Collections
         public struct Enumerator : IEnumerator<T>
         {
             private readonly BlockList<T> _list;
-            private ArraySegment<T> _currentBlock;
+            private Block<T> _currentBlock;
             private int _blockIndex;
             private int _elementIndex;
 
@@ -281,8 +281,7 @@ namespace Clever.Collections
                 _elementIndex = -1;
             }
 
-            // This can be changed to index _currentBlock directly once ArraySegment.this[] is available.
-            public T Current => _currentBlock.Array[_currentBlock.Offset + _elementIndex];
+            public T Current => _currentBlock[_elementIndex];
 
             public void Dispose()
             {

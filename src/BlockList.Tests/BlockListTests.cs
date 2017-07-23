@@ -77,6 +77,7 @@ namespace Clever.Collections.Tests
             Assert.Equal(expected, list.IsContiguous);
         }
 
+        // TODO: Speed up this test. It's taking 15 sec.
         [Theory]
         [MemberData(nameof(TestEnumerablesAndOptions_Data))]
         public void Add_AddRange(IEnumerable<int> items, Options options)
