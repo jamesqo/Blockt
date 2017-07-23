@@ -7,7 +7,7 @@ using static Clever.Collections.BlockList;
 
 namespace Clever.Collections
 {
-    public class BlockList<T> : ICollection<T>
+    public class BlockList<T> : IList<T>
     {
         private readonly Options _options;
 
@@ -60,6 +60,12 @@ namespace Clever.Collections
         private ArraySegment<T> HeadSpan => new ArraySegment<T>(_head, 0, _headCount);
 
         private int TailCount => _tail.Count;
+
+        public T this[int index]
+        {
+            get => GetRef(index);
+            set => GetRef(index) = value;
+        }
 
         public void Add(T item)
         {
@@ -155,6 +161,44 @@ namespace Clever.Collections
 
         public Enumerator GetEnumerator() => new Enumerator(this);
 
+        public ref T GetRef(int index)
+        {
+            Verify.InRange(index >= 0 && index < _count, nameof(index));
+
+            for (int i = 0; i < TailCount; i++)
+            {
+                T[] block = _tail[i];
+                if (index < block.Length)
+                {
+                    return ref block[index];
+                }
+                index -= block.Length;
+            }
+
+            Debug.Assert(index < _head.Length);
+            return ref _head[index];
+        }
+
+        public int IndexOf(T item)
+        {
+            int processed = 0;
+            for (int i = 0; i < TailCount; i++)
+            {
+                T[] block = _tail[i];
+                int index = Array.IndexOf(block, item);
+                if (index >= 0)
+                {
+                    return processed + index;
+                }
+                processed += block.Length;
+            }
+
+            int headIndex = Array.IndexOf(_head, item, 0, _headCount);
+            return headIndex >= 0 ? processed + headIndex : -1;
+        }
+
+        public void Insert(int index, T item) => throw new NotImplementedException();
+
         public ArraySegment<T> MoveToBlock()
         {
             Verify.ValidState(IsContiguous, Strings.MoveToBlock_NotContiguous);
@@ -168,6 +212,8 @@ namespace Clever.Collections
 
             return result;
         }
+
+        public void RemoveAt(int index) => throw new NotImplementedException();
 
         public T[] ToArray()
         {
@@ -206,7 +252,7 @@ namespace Clever.Collections
 
         bool ICollection<T>.IsReadOnly => false;
 
-        bool ICollection<T>.Remove(T item) => throw new NotSupportedException();
+        bool ICollection<T>.Remove(T item) => throw new NotImplementedException();
 
         IEnumerator<T> IEnumerable<T>.GetEnumerator() => GetEnumerator();
 
