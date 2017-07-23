@@ -187,7 +187,7 @@ namespace Clever.Collections
             foreach (T[] block in _tail)
             {
                 int index = Array.IndexOf(block, item);
-                if (index == -1)
+                if (index != -1)
                 {
                     return processed + index;
                 }
@@ -195,7 +195,7 @@ namespace Clever.Collections
             }
 
             int headIndex = Array.IndexOf(_head, item, 0, _headCount);
-            return headIndex == -1 ? processed + headIndex : -1;
+            return headIndex != -1 ? processed + headIndex : -1;
         }
 
         public void Insert(int index, T item)
