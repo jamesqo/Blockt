@@ -49,6 +49,8 @@ namespace Clever.Collections
 
         public bool IsContiguous => BlockCount == 1;
 
+        public bool IsEmpty => _count == 0;
+
         public bool IsFull => _count == _capacity;
 
         public Options Options => _options;
@@ -169,7 +171,7 @@ namespace Clever.Collections
 
         public T[] ToArray()
         {
-            if (_count == 0)
+            if (IsEmpty)
             {
                 return Array.Empty<T>();
             }
@@ -184,7 +186,7 @@ namespace Clever.Collections
             Debug.Assert(IsFull);
 
             int initialCapacity = _options.InitialCapacity;
-            if (_count == 0)
+            if (IsEmpty)
             {
                 _head = new T[initialCapacity];
                 _capacity = initialCapacity;
