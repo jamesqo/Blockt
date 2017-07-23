@@ -51,6 +51,8 @@ namespace System
             set => Array[index] = value;
         }
 
+        public ArraySegment<T> AsArraySegment() => new ArraySegment<T>(Array, 0, Count);
+
         public bool Contains(T item) => IndexOf(item) != -1;
 
         public void CopyTo(T[] destination) => CopyTo(destination, 0);
