@@ -69,7 +69,7 @@ namespace Clever.Collections
         {
             if (IsFull)
             {
-                MakeRoom();
+                Resize();
             }
 
             _head[_headCount++] = item;
@@ -221,7 +221,7 @@ namespace Clever.Collections
             return array;
         }
 
-        private void MakeRoom()
+        private void Resize()
         {
             Debug.Assert(IsFull);
 

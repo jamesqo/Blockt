@@ -66,7 +66,7 @@ namespace Clever.Collections.Internal
         {
             if (IsFull)
             {
-                MakeRoom();
+                Resize();
             }
 
             _array[_count++] = item;
@@ -80,7 +80,7 @@ namespace Clever.Collections.Internal
         /// <summary>
         /// Resizes this list when it is full.
         /// </summary>
-        private void MakeRoom()
+        private void Resize()
         {
             Debug.Assert(IsFull);
 
