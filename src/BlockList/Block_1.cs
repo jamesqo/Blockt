@@ -8,11 +8,13 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using Clever.Collections.Internal;
 using SystemArray = System.Array;
 
 namespace Clever.Collections
 {
+    [DebuggerDisplay(DebuggerStrings.DisplayFormat)]
     public partial struct Block<T> : IList<T>, IReadOnlyList<T>
     {
         internal Block(T[] array)
@@ -45,6 +47,8 @@ namespace Clever.Collections
         public bool IsDefaultOrEmpty => Count == 0;
 
         public bool IsEmpty => !IsDefault && Count == 0;
+
+        private string DebuggerDisplay => $"{nameof(Count)} = {Count}";
 
         public T this[int index]
         {

@@ -7,6 +7,7 @@ using static Clever.Collections.BlockList;
 
 namespace Clever.Collections
 {
+    [DebuggerDisplay(DebuggerStrings.DisplayFormat)]
     public partial class BlockList<T> : IList<T>, IReadOnlyList<T>
     {
         private readonly Options _options;
@@ -55,7 +56,11 @@ namespace Clever.Collections
 
         public Options Options => _options;
 
+        private string DebuggerDisplay => $"{nameof(Count)} = {Count}, {nameof(HeadCount)} = {HeadCount}, {nameof(HeadCapacity)} = {HeadCapacity}";
+
         private int HeadCapacity => _head.Length;
+
+        private int HeadCount => _headCount;
 
         private Block<T> HeadSpan => new Block<T>(_head, _headCount);
 

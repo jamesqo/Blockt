@@ -7,6 +7,7 @@ namespace Clever.Collections.Internal
     /// A list optimized for a small number of items.
     /// </summary>
     /// <typeparam name="T">The type of the items.</typeparam>
+    [DebuggerDisplay(DebuggerStrings.DisplayFormat)]
     internal partial struct SmallList<T>
     {
         /// <summary>
@@ -33,6 +34,8 @@ namespace Clever.Collections.Internal
         /// Gets the number of items in this list.
         /// </summary>
         public int Count => _count;
+
+        private string DebuggerDisplay => $"{nameof(Count)} = {Count}";
 
         /// <summary>
         /// Gets a value indicating whether this list is full.
