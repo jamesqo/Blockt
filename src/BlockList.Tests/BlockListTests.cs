@@ -185,13 +185,6 @@ namespace Clever.Collections.Tests
             Assert.False(collection.IsReadOnly);
         }
 
-        [Fact]
-        public void ICollection_Remove_ThrowsNotSupported()
-        {
-            ICollection<int> collection = new BlockList<int>();
-            Assert.Throws<NotSupportedException>(() => collection.Remove(item: 0));
-        }
-
         private static void CheckContents<T>(BlockList<T> list, IEnumerable<T> contents)
         {
             void CheckCopyTo()
