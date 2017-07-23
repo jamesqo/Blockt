@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using Clever.Collections.Tests.TestInternal;
 using Xunit;
@@ -22,7 +21,7 @@ namespace Clever.Collections.Tests
         public static IEnumerable<object[]> TestOptions_Data()
             => TestOptions.ToTheoryData();
 
-        private static IEnumerable<(IEnumerable<int>, Options)> TestEnumerablesAndOptions
+        private static IEnumerable<(IEnumerable<int> items, Options options)> TestEnumerablesAndOptions
             => TestOptions.SelectMany(
                 opts => GetTestEnumerables(opts).Select(
                     items => (items, opts)));
@@ -77,20 +76,17 @@ namespace Clever.Collections.Tests
             Assert.Equal(expected, list.IsContiguous);
         }
 
-        // TODO: Speed up this test. It's taking 15 sec.
         [Theory]
         [MemberData(nameof(TestEnumerablesAndOptions_Data))]
         public void Add_AddRange(IEnumerable<int> items, Options options)
         {
             var list = new BlockList<int>(options);
 
-            int count = 0;
             foreach (int item in items)
             {
-                count++;
                 list.Add(item);
-                CheckContents(list, items.Take(count));
             }
+            CheckContents(list, items);
 
             list.Clear();
             list.AddRange(items);
@@ -157,6 +153,91 @@ namespace Clever.Collections.Tests
 
         [Theory]
         [MemberData(nameof(TestEnumerablesAndOptions_Data))]
+        public void First(IEnumerable<int> items, Options options)
+        {
+            var list = new BlockList<int>(items, options);
+            if (list.IsEmpty)
+            {
+                return;
+            }
+
+            Assert.Equal(Enumerable.First(list), list.First());
+        }
+
+        [Fact]
+        public void First_Empty_ThrowsInvalidOperation()
+        {
+            Assert.Throws<InvalidOperationException>(() => new BlockList<int>().First());
+        }
+
+        [Fact]
+        public void GetEnumerator_Reset_ThrowsNotSupported()
+        {
+            IEnumerable enumerable = new BlockList<int>();
+            Assert.Throws<NotSupportedException>(() => enumerable.GetEnumerator().Reset());
+        }
+
+        [Theory]
+        [MemberData(nameof(Insert_Data))]
+        public void Insert(IEnumerable<int> items, Options options, int index, int item)
+        {
+            var expected = items.Take(index).Append(item).Concat(items.Skip(index));
+            var list = new BlockList<int>(items, options);
+            list.Insert(index, item);
+            Assert.Equal(expected, list);
+        }
+
+        public static IEnumerable<object[]> Insert_Data()
+            => TestEnumerablesAndOptions.SelectMany(x =>
+            {
+                var (items, options) = x;
+                int excluded = checked(items.MaxOrDefault() + 1);
+                var testCases = new[]
+                {
+                    (items, options, index: 0, item: excluded)
+                };
+
+                if (items.Any())
+                {
+                    testCases = testCases.Concat(new[]
+                    {
+                        (items, options, index: 1, item: excluded),
+                        (items, options, index: items.Count() / 4, item: excluded),
+                        (items, options, index: items.Count() / 4 + 1, item: excluded),
+                        (items, options, index: items.Count() / 2, item: excluded),
+                        (items, options, index: items.Count() / 2 + 1, item: excluded),
+                        (items, options, index: 3 * items.Count() / 4, item: excluded),
+                        (items, options, index: 3 * items.Count() / 4 + 1, item: excluded),
+                        (items, options, index: items.Count() - 1, item: excluded)
+                    })
+                    .ToArray();
+                }
+
+                return testCases;
+            })
+            .ToTheoryData();
+
+        [Theory]
+        [MemberData(nameof(TestEnumerablesAndOptions_Data))]
+        public void Last(IEnumerable<int> items, Options options)
+        {
+            var list = new BlockList<int>(items, options);
+            if (list.IsEmpty)
+            {
+                return;
+            }
+
+            Assert.Equal(Enumerable.Last(list), list.Last());
+        }
+
+        [Fact]
+        public void Last_Empty_ThrowsInvalidOperation()
+        {
+            Assert.Throws<InvalidOperationException>(() => new BlockList<int>().Last());
+        }
+
+        [Theory]
+        [MemberData(nameof(TestEnumerablesAndOptions_Data))]
         public void MoveToBlock(IEnumerable<int> items, Options options)
         {
             var list = new BlockList<int>(items, options);
@@ -170,13 +251,6 @@ namespace Clever.Collections.Tests
             Assert.Equal(expected, actual);
 
             CheckEmptyList(list);
-        }
-
-        [Fact]
-        public void GetEnumerator_Reset_ThrowsNotSupported()
-        {
-            IEnumerable enumerable = new BlockList<int>();
-            Assert.Throws<NotSupportedException>(() => enumerable.GetEnumerator().Reset());
         }
 
         [Fact]

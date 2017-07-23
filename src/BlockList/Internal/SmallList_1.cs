@@ -1,4 +1,6 @@
 using System;
+using System.Collections;
+using System.Collections.Generic;
 using System.Diagnostics;
 
 namespace Clever.Collections.Internal
@@ -7,7 +9,9 @@ namespace Clever.Collections.Internal
     /// A list optimized for a small number of items.
     /// </summary>
     /// <typeparam name="T">The type of the items.</typeparam>
-    internal partial struct SmallList<T>
+    [DebuggerDisplay(DebuggerStrings.DisplayFormat)]
+    [DebuggerTypeProxy(typeof(EnumerableDebuggerProxy<>))]
+    internal partial struct SmallList<T> : IEnumerable<T>
     {
         /// <summary>
         /// The size of this list's buffer after the first item is added.
@@ -33,6 +37,8 @@ namespace Clever.Collections.Internal
         /// Gets the number of items in this list.
         /// </summary>
         public int Count => _count;
+
+        private string DebuggerDisplay => $"{nameof(Count)} = {Count}";
 
         /// <summary>
         /// Gets a value indicating whether this list is full.
@@ -97,5 +103,9 @@ namespace Clever.Collections.Internal
             
             _array = newArray;
         }
+
+        IEnumerator<T> IEnumerable<T>.GetEnumerator() => GetEnumerator();
+
+        IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
     }
 }

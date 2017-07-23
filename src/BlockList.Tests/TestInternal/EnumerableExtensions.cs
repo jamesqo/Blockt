@@ -26,5 +26,10 @@ namespace Clever.Collections.Tests.TestInternal
         {
             return source.Select(x => new object[] { x.Item1, x.Item2 });
         }
+
+        public static IEnumerable<object[]> ToTheoryData<T1, T2, T3, T4>(this IEnumerable<(T1, T2, T3, T4)> source)
+        {
+            return source.Select(x => new object[] { x.Item1, x.Item2, x.Item3, x.Item4 });
+        }
     }
 }

@@ -7,6 +7,8 @@ using static Clever.Collections.BlockList;
 
 namespace Clever.Collections
 {
+    [DebuggerDisplay(DebuggerStrings.DisplayFormat)]
+    [DebuggerTypeProxy(typeof(EnumerableDebuggerProxy<>))]
     public partial class BlockList<T> : IList<T>, IReadOnlyList<T>
     {
         private readonly Options _options;
@@ -55,7 +57,11 @@ namespace Clever.Collections
 
         public Options Options => _options;
 
+        private string DebuggerDisplay => $"{nameof(Count)} = {Count}, {nameof(HeadCount)} = {HeadCount}, {nameof(HeadCapacity)} = {HeadCapacity}";
+
         private int HeadCapacity => _head.Length;
+
+        private int HeadCount => _headCount;
 
         private Block<T> HeadSpan => new Block<T>(_head, _headCount);
 
@@ -104,18 +110,7 @@ namespace Clever.Collections
             _capacity = 0;
         }
 
-        public bool Contains(T item)
-        {
-            foreach (T[] block in _tail)
-            {
-                if (Array.IndexOf(block, item) >= 0)
-                {
-                    return true;
-                }
-            }
-
-            return Array.IndexOf(_head, item, 0, _headCount) >= 0;
-        }
+        public bool Contains(T item) => IndexOf(item) != -1;
 
         public void CopyTo(T[] array, int arrayIndex)
         {
@@ -187,7 +182,7 @@ namespace Clever.Collections
             foreach (T[] block in _tail)
             {
                 int index = Array.IndexOf(block, item);
-                if (index >= 0)
+                if (index != -1)
                 {
                     return processed + index;
                 }
@@ -195,10 +190,75 @@ namespace Clever.Collections
             }
 
             int headIndex = Array.IndexOf(_head, item, 0, _headCount);
-            return headIndex >= 0 ? processed + headIndex : -1;
+            return headIndex != -1 ? processed + headIndex : -1;
         }
 
-        public void Insert(int index, T item) => throw new NotImplementedException();
+        public void Insert(int index, T item)
+        {
+            Verify.InRange(index >= 0 && index <= _count, nameof(index));
+
+            if (index == _count)
+            {
+                Add(item);
+                return;
+            }
+
+            Debug.Assert(!IsEmpty);
+
+            // Here's how this procedure will look like when the insert position is 2 blocks
+            // behind the head block.
+
+            // Capture last item.
+            // Shift at _tail.Count (head).
+            // Add last item (only for head).
+            // Move up.
+            // Shift last item: done with _tail.Count (head).
+            // Shift at _tail.Count - 1.
+            // Move up.
+            // Shift last item: done with _tail.Count - 1.
+            // Shift end at _tail.Count - 2 (only the part after the insert position).
+            // Write the item.
+
+            T last = Last();
+            var insertPos = GetPosition(index);
+
+            // We have to special-case when the insert position is in the head block,
+            // since we must also add the last item after ShiftEnd() is called.
+            if (insertPos.BlockIndex == _tail.Count)
+            {
+                ShiftEnd(_tail.Count, insertPos.ElementIndex);
+                // This must run first in case _head changes during Add.
+                _head[insertPos.ElementIndex] = item;
+                Add(last);
+                return;
+            }
+
+            Shift(_tail.Count);
+
+            {
+                int blockIndex = _tail.Count - 1;
+                // Since the insert position wasn't in the head block, it must be in a block
+                // preceding the head block, and that means there are multiple blocks.
+                Debug.Assert(blockIndex >= 0);
+
+                // Add() must run after calculating blockIndex, in case it affects _tail.Count.
+                Add(last);
+
+                while (true)
+                {
+                    ShiftLast(blockIndex);
+                    if (blockIndex == insertPos.BlockIndex)
+                    {
+                        break;
+                    }
+                    Shift(blockIndex);
+                    blockIndex--;
+                }
+
+                ShiftEnd(blockIndex, insertPos.ElementIndex);
+                _tail[blockIndex][insertPos.ElementIndex] = item;
+            }
+        }
 
         public T Last()
         {
@@ -235,6 +295,32 @@ namespace Clever.Collections
             return array;
         }
 
+        private Position GetPosition(int index)
+        {
+            Debug.Assert(index >= 0 && index < _count);
+
+            int blockIndex = -1, elementIndex = index;
+
+            for (int i = 0; i < _tail.Count; i++)
+            {
+                T[] block = _tail[i];
+                if (elementIndex < block.Length)
+                {
+                    blockIndex = i;
+                    break;
+                }
+                elementIndex -= block.Length;
+            }
+
+            if (blockIndex == -1)
+            {
+                Debug.Assert(elementIndex < _headCount);
+                blockIndex = _tail.Count;
+            }
+
+            return new Position(blockIndex, elementIndex);
+        }
+
         private void Resize()
         {
             Debug.Assert(IsFull);
@@ -256,6 +342,29 @@ namespace Clever.Collections
             _head = new T[nextCapacity];
             _headCount = 0;
             _capacity += nextCapacity;
+        }
+        
+        private void Shift(int blockIndex)
+        {
+            var block = GetBlock(blockIndex);
+            Array.Copy(block.Array, 0, block.Array, 1, block.Count - 1);
+        }
+
+        private void ShiftEnd(int blockIndex, int elementIndex)
+        {
+            var block = GetBlock(blockIndex);
+            Array.Copy(block.Array, elementIndex, block.Array, elementIndex + 1, block.Count - elementIndex - 1);
+        }
+
+        private void ShiftLast(int blockIndex)
+        {
+            Debug.Assert(blockIndex < _tail.Count);
+
+            T[] block = _tail[blockIndex];
+            var successor = GetBlock(blockIndex + 1);
+            Debug.Assert(block.Length > 0 && !successor.IsEmpty);
+
+            successor[0] = block.Last();
         }
 
         bool ICollection<T>.IsReadOnly => false;
