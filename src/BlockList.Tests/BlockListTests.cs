@@ -144,6 +144,18 @@ namespace Clever.Collections.Tests
 
         [Theory]
         [MemberData(nameof(TestEnumerablesAndOptions_Data))]
+        public void Contains_DefaultValue_NoFalsePositive(IEnumerable<int> items, Options options)
+        {
+            // This is a regression test. If the BlockList isn't full, then there will be some
+            // trailing default-initialized slots in the head block. Contains() must take care
+            // not to search those slots for the item, since they're not part of the list's contents.
+            items = items.Where(x => x != 0);
+            var list = new BlockList<int>(items, options);
+            Assert.False(list.Contains(0));
+        }
+
+        [Theory]
+        [MemberData(nameof(TestEnumerablesAndOptions_Data))]
         public void MoveToBlock(IEnumerable<int> items, Options options)
         {
             var list = new BlockList<int>(items, options);
