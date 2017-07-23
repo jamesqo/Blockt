@@ -104,18 +104,7 @@ namespace Clever.Collections
             _capacity = 0;
         }
 
-        public bool Contains(T item)
-        {
-            foreach (T[] block in _tail)
-            {
-                if (Array.IndexOf(block, item) == -1)
-                {
-                    return true;
-                }
-            }
-
-            return Array.IndexOf(_head, item, 0, _headCount) == -1;
-        }
+        public bool Contains(T item) => IndexOf(item) != -1;
 
         public void CopyTo(T[] array, int arrayIndex)
         {
