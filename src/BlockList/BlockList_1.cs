@@ -131,6 +131,13 @@ namespace Clever.Collections
             Array.Copy(_head, 0, array, arrayIndex, _headCount);
         }
 
+        public T First()
+        {
+            Verify.ValidState(!IsEmpty, Strings.First_EmptyList);
+
+            return GetBlock(0).Array[0];
+        }
+
         public ArraySegment<T> GetBlock(int index)
         {
             Verify.InRange(index >= 0 && index < BlockCount, nameof(index));
@@ -192,6 +199,13 @@ namespace Clever.Collections
         }
 
         public void Insert(int index, T item) => throw new NotImplementedException();
+
+        public T Last()
+        {
+            Verify.ValidState(!IsEmpty, Strings.Last_EmptyList);
+
+            return _head[_headCount - 1];
+        }
 
         public ArraySegment<T> MoveToBlock()
         {
