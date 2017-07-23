@@ -41,7 +41,7 @@ namespace Clever.Collections
             AddRange(items);
         }
 
-        public int BlockCount => TailCount + 1;
+        public int BlockCount => _tail.Count + 1;
 
         public int Capacity => _capacity;
 
@@ -58,8 +58,6 @@ namespace Clever.Collections
         private int HeadCapacity => _head.Length;
 
         private ArraySegment<T> HeadSpan => new ArraySegment<T>(_head, 0, _headCount);
-
-        private int TailCount => _tail.Count;
 
         public T this[int index]
         {
@@ -90,7 +88,7 @@ namespace Clever.Collections
 
         public void Clear()
         {
-            for (int i = 0; i < TailCount; i++)
+            for (int i = 0; i < _tail.Count; i++)
             {
                 T[] block = _tail[i];
                 _tail[i] = null;
@@ -137,23 +135,23 @@ namespace Clever.Collections
         {
             Verify.InRange(index >= 0 && index < BlockCount, nameof(index));
 
-            if (index < TailCount)
+            if (index < _tail.Count)
             {
                 return new ArraySegment<T>(_tail[index]);
             }
 
-            Debug.Assert(index == TailCount);
+            Debug.Assert(index == _tail.Count);
             return HeadSpan;
         }
 
         public ArraySegment<T>[] GetBlocks()
         {
             var blocks = new ArraySegment<T>[BlockCount];
-            for (int i = 0; i < TailCount; i++)
+            for (int i = 0; i < _tail.Count; i++)
             {
                 blocks[i] = new ArraySegment<T>(_tail[i]);
             }
-            blocks[TailCount] = HeadSpan;
+            blocks[_tail.Count] = HeadSpan;
             return blocks;
         }
 
