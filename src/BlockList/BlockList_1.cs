@@ -353,6 +353,8 @@ namespace Clever.Collections
 
             T[] block = _tail[blockIndex];
             var successor = GetBlock(blockIndex + 1);
+            Debug.Assert(block.Length > 0 && !successor.IsEmpty);
+
             successor[0] = block.Last();
         }
 
