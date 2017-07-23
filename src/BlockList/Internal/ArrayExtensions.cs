@@ -1,6 +1,4 @@
-﻿using System.Linq;
-
-namespace Clever.Collections.Internal
+﻿namespace Clever.Collections.Internal
 {
     internal static class ArrayExtensions
     {
