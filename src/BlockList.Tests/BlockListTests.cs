@@ -235,7 +235,7 @@ namespace Clever.Collections.Tests
             {
                 var (items, options) = x;
                 int excluded = checked(items.MaxOrDefault() + 1);
-                return GetTestIndices(items.Count()).Select(
+                return GetTestIndices(items.Count(), exclusive: false).Select(
                     index => (items, options, index, excluded));
             })
             .ToTheoryData();
@@ -288,7 +288,7 @@ namespace Clever.Collections.Tests
 
         public static IEnumerable<object[]> RemoveAt_Data()
             => TestEnumerablesAndOptions.SelectMany(
-                x => GetTestIndices(x.items.Count()).Select(
+                x => GetTestIndices(x.items.Count(), exclusive: true).Select(
                     index => (x.items, x.options, index)))
             .ToTheoryData();
 
@@ -468,23 +468,26 @@ namespace Clever.Collections.Tests
             }
         }
 
-        private static IEnumerable<int> GetTestIndices(int listCount)
+        private static IEnumerable<int> GetTestIndices(int listCount, bool exclusive)
         {
             Debug.Assert(listCount >= 0);
 
-            yield return 0;
-
-            if (listCount > 0)
+            var indices = new[]
             {
-                yield return 1;
-                yield return listCount / 4;
-                yield return listCount / 4 + 1;
-                yield return listCount / 2;
-                yield return listCount / 2 + 1;
-                yield return 3 * listCount / 4;
-                yield return 3 * listCount / 4 + 1;
-                yield return listCount - 1;
-            }
+                0,
+                1,
+                listCount / 4,
+                listCount / 4 + 1,
+                listCount / 2,
+                listCount / 2 + 1,
+                3 * listCount / 4,
+                3 * listCount / 4 + 1,
+                listCount - 1,
+                listCount
+            };
+
+            return indices.Where(
+                index => index >= 0 && (exclusive ? index < listCount : index <= listCount));
         }
     }
 }
