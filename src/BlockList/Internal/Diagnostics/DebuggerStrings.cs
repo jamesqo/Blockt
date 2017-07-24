@@ -1,4 +1,4 @@
-﻿namespace Clever.Collections.Internal
+﻿namespace Clever.Collections.Internal.Diagnostics
 {
     internal static class DebuggerStrings
     {

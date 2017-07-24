@@ -2,7 +2,7 @@
 using System.Diagnostics;
 using System.Linq;
 
-namespace Clever.Collections.Internal
+namespace Clever.Collections.Internal.Diagnostics
 {
     internal class EnumerableDebuggerProxy<T>
     {

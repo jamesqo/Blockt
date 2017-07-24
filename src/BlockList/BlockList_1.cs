@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using Clever.Collections.Internal;
+using Clever.Collections.Internal.Diagnostics;
 using static Clever.Collections.BlockList;
 
 namespace Clever.Collections
