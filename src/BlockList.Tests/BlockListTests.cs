@@ -17,6 +17,7 @@ namespace Clever.Collections.Tests
                 DefaultOptions,
                 CreateOptions(initialCapacity: 1),
                 CreateOptions(initialCapacity: 10),
+                CreateOptions(initialCapacity: 13),
                 CreateOptions(initialCapacity: 17)
             };
 
@@ -234,28 +235,8 @@ namespace Clever.Collections.Tests
             {
                 var (items, options) = x;
                 int excluded = checked(items.MaxOrDefault() + 1);
-                var testCases = new[]
-                {
-                    (items, options, index: 0, item: excluded)
-                };
-
-                if (items.Any())
-                {
-                    testCases = testCases.Concat(new[]
-                    {
-                        (items, options, index: 1, item: excluded),
-                        (items, options, index: items.Count() / 4, item: excluded),
-                        (items, options, index: items.Count() / 4 + 1, item: excluded),
-                        (items, options, index: items.Count() / 2, item: excluded),
-                        (items, options, index: items.Count() / 2 + 1, item: excluded),
-                        (items, options, index: 3 * items.Count() / 4, item: excluded),
-                        (items, options, index: 3 * items.Count() / 4 + 1, item: excluded),
-                        (items, options, index: items.Count() - 1, item: excluded)
-                    })
-                    .ToArray();
-                }
-
-                return testCases;
+                return GetTestIndices(items.Count()).Select(
+                    index => (items, options, index, excluded));
             })
             .ToTheoryData();
 
@@ -294,6 +275,22 @@ namespace Clever.Collections.Tests
 
             CheckEmptyList(list);
         }
+
+        [Theory]
+        [MemberData(nameof(RemoveAt_Data))]
+        public void RemoveAt(IEnumerable<int> items, Options options, int index)
+        {
+            var expected = items.Take(index).Concat(items.Skip(index + 1));
+            var list = new BlockList<int>(items, options);
+            list.RemoveAt(index);
+            Assert.Equal(expected, list);
+        }
+
+        public static IEnumerable<object[]> RemoveAt_Data()
+            => TestEnumerablesAndOptions.SelectMany(
+                x => GetTestIndices(x.items.Count()).Select(
+                    index => (x.items, x.options, index)))
+            .ToTheoryData();
 
         [Fact]
         public void ICollection_IsReadOnly_ReturnsFalse()
@@ -468,6 +465,25 @@ namespace Clever.Collections.Tests
                 yield return CreateEnumerable(filledCount);
                 yield return CreateEnumerable(filledCount + 1);
                 yield return CreateEnumerable(filledCount + 10);
+            }
+        }
+
+        private static IEnumerable<int> GetTestIndices(int listCount)
+        {
+            Debug.Assert(listCount >= 0);
+
+            yield return 0;
+
+            if (listCount > 0)
+            {
+                yield return 1;
+                yield return listCount / 4;
+                yield return listCount / 4 + 1;
+                yield return listCount / 2;
+                yield return listCount / 2 + 1;
+                yield return 3 * listCount / 4;
+                yield return 3 * listCount / 4 + 1;
+                yield return listCount - 1;
             }
         }
     }
