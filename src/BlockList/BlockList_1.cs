@@ -276,6 +276,18 @@ namespace Clever.Collections
             return result;
         }
 
+        public bool Remove(T item)
+        {
+            int index = IndexOf(item);
+            if (index == -1)
+            {
+                return false;
+            }
+
+            RemoveAt(index);
+            return true;
+        }
+
         public void RemoveAt(int index)
         {
             Verify.InRange(index >= 0 && index < _count, nameof(index));
@@ -439,8 +451,6 @@ namespace Clever.Collections
         }
 
         bool ICollection<T>.IsReadOnly => false;
-
-        bool ICollection<T>.Remove(T item) => throw new NotImplementedException();
 
         IEnumerator<T> IEnumerable<T>.GetEnumerator() => GetEnumerator();
 
