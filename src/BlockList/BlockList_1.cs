@@ -261,6 +261,14 @@ namespace Clever.Collections
             }
         }
 
+        public void InsertRange(int index, IEnumerable<T> items)
+        {
+            foreach (T item in items)
+            {
+                Insert(index++, item);
+            }
+        }
+
         public T Last()
         {
             Verify.ValidState(!IsEmpty, Strings.Last_EmptyCollection);
