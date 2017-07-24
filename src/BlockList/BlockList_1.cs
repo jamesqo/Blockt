@@ -94,7 +94,7 @@ namespace Clever.Collections
 
         public void Clear()
         {
-            // TODO: Add more comments
+            // Capture relevant state in local variables, so we can use them after Reset() wipes the fields.
             var head = _head;
             int headCount = _headCount;
             var tail = _tail;
