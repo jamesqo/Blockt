@@ -292,13 +292,9 @@ namespace Clever.Collections
         {
             Verify.InRange(index >= 0 && index < _count, nameof(index));
 
-            if (index != _count - 1)
+            if (index < _count - 1)
             {
                 var removePos = GetPosition(index);
-
-                // At _tail.Count: shift end left, remove last
-                // At tc - 1: shift end left, shift first left, shift left, remove last
-
                 ShiftEndLeft(removePos.BlockIndex, removePos.ElementIndex);
 
                 int blockIndex = removePos.BlockIndex + 1;
@@ -357,14 +353,18 @@ namespace Clever.Collections
             _count--;
             _head[--_headCount] = default(T);
 
+            // To maintain invariants, we need to make sure the head block isn't empty unless
+            // the entire block list is empty.
             if (_headCount == 0)
             {
                 if (_tail.IsEmpty)
                 {
+                    // The entire block list is empty, so revert to the initial state.
                     Reset();
                 }
                 else
                 {
+                    // Throw away the current head block and pretend we've just finished filling the last block.
                     _head = _tail.RemoveLast();
                     _headCount = _head.Length;
                 }

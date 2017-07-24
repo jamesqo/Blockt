@@ -40,6 +40,9 @@ namespace Clever.Collections.Internal
 
         private string DebuggerDisplay => $"{nameof(Count)} = {Count}";
 
+        /// <summary>
+        /// Gets a value indicating whether this list is empty.
+        /// </summary>
         public bool IsEmpty => _count == 0;
 
         /// <summary>
@@ -85,6 +88,10 @@ namespace Clever.Collections.Internal
         /// </summary>
         public Enumerator GetEnumerator() => new Enumerator(_array, _count);
 
+        /// <summary>
+        /// Removes the last item of this list.
+        /// </summary>
+        /// <returns>The removed item.</returns>
         public T RemoveLast()
         {
             Debug.Assert(!IsEmpty);
