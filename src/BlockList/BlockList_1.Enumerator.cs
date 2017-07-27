@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 
 namespace Clever.Collections
 {
@@ -16,8 +17,10 @@ namespace Clever.Collections
             internal Enumerator(BlockList<T> list)
                 : this()
             {
+                Debug.Assert(list != null);
+
                 _list = list;
-                _currentBlock = list.GetBlock(0);
+                _currentBlock = list.Blocks[0];
                 _elementIndex = -1;
             }
 
@@ -36,7 +39,7 @@ namespace Clever.Collections
                         return false;
                     }
 
-                    _currentBlock = _list.GetBlock(++_blockIndex);
+                    _currentBlock = _list.Blocks[++_blockIndex];
                     _elementIndex = -1;
                 }
 

@@ -26,7 +26,7 @@ namespace Clever.Collections
 
             public bool MoveNext() => ++_index < _view.Count;
 
-            object IEnumerator.Current => throw new NotImplementedException();
+            object IEnumerator.Current => Current;
 
             void IEnumerator.Reset() => throw new NotSupportedException();
         }
