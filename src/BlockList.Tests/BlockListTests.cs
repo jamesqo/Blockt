@@ -347,7 +347,6 @@ namespace Clever.Collections.Tests
 
         private static void CheckContents<T>(BlockList<T> list, IEnumerable<T> contents)
         {
-            // TODO: Move these to a separate file just for BlockView tests? (also, rename the methods)
             void CheckBlocks()
             {
                 int elementIndex = 0;

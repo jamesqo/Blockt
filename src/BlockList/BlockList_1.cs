@@ -9,7 +9,7 @@ using static Clever.Collections.BlockList;
 namespace Clever.Collections
 {
     [DebuggerDisplay(DebuggerStrings.DisplayFormat)]
-    [DebuggerTypeProxy(typeof(EnumerableDebuggerProxy<>))] // TODO: This better not be eliminating useful properties from the debugger such as Blocks. Consider subclassing.
+    [DebuggerTypeProxy(typeof(EnumerableDebuggerProxy<>))]
     public partial class BlockList<T> : IList<T>, IReadOnlyList<T>
     {
         private readonly Options _options;

@@ -13,7 +13,6 @@ namespace Clever.Collections.Internal.Diagnostics
             _enumerable = enumerable;
         }
 
-        // TODO: May have to change this to 'Z' or 'Zz'. Add explanation.
         [DebuggerBrowsable(DebuggerBrowsableState.RootHidden)]
         public T[] Contents => _enumerable.ToArray();
     }
