@@ -351,9 +351,8 @@ namespace Clever.Collections.Tests
             {
                 int elementIndex = 0;
 
-                for (int i = 0; i < list.BlockCount; i++)
+                foreach (var block in list.Blocks)
                 {
-                    var block = list.Blocks[i];
                     Assert.Equal(contents.Skip(elementIndex).Take(block.Count), block);
                     elementIndex += block.Count;
                 }

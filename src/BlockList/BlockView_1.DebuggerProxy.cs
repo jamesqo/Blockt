@@ -7,8 +7,8 @@ namespace Clever.Collections
     {
         private class DebuggerProxy : EnumerableDebuggerProxy<Block<T>>
         {
-            public DebuggerProxy(IEnumerable<Block<T>> enumerable)
-                : base(enumerable)
+            public DebuggerProxy(BlockView<T> view)
+                : base(view)
             {
             }
         }
