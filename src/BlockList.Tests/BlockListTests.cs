@@ -133,7 +133,7 @@ namespace Clever.Collections.Tests
         public void Clear(IEnumerable<int> items, Options options)
         {
             var list = new BlockList<int>(items, options);
-            var blocks = list.GetBlocks();
+            var blocks = list.Blocks.ToArray();
 
             list.Clear();
 
@@ -269,7 +269,7 @@ namespace Clever.Collections.Tests
                 return;
             }
 
-            var expected = Assert.Single(list.GetBlocks());
+            var expected = Assert.Single(list.Blocks);
             var actual = list.MoveToBlock();
             Assert.Equal(expected, actual);
 
@@ -347,6 +347,17 @@ namespace Clever.Collections.Tests
 
         private static void CheckContents<T>(BlockList<T> list, IEnumerable<T> contents)
         {
+            void CheckBlocks()
+            {
+                int elementIndex = 0;
+
+                foreach (var block in list.Blocks)
+                {
+                    Assert.Equal(contents.Skip(elementIndex).Take(block.Count), block);
+                    elementIndex += block.Count;
+                }
+            }
+
             void CheckCopyTo()
             {
                 var buffer = new T[list.Count];
@@ -358,21 +369,6 @@ namespace Clever.Collections.Tests
             {
                 Assert.Equal(contents, list);
                 Assert.Equal(contents, (IEnumerable)list);
-            }
-
-            void CheckGetBlockAndGetBlocks()
-            {
-                var blocks = list.GetBlocks();
-                int elementIndex = 0;
-
-                for (int i = 0; i < list.BlockCount; i++)
-                {
-                    var block = blocks[i];
-                    Assert.Equal(block, list.GetBlock(i));
-
-                    Assert.Equal(contents.Skip(elementIndex).Take(block.Count), block);
-                    elementIndex += block.Count;
-                }
             }
 
             void CheckGetEnumerator()
@@ -389,9 +385,9 @@ namespace Clever.Collections.Tests
 
             CheckCount(list, contents.Count());
 
+            CheckBlocks();
             CheckCopyTo();
             CheckExplicitGetEnumerator();
-            CheckGetBlockAndGetBlocks();
             CheckGetEnumerator();
             CheckToArray();
         }
@@ -435,9 +431,9 @@ namespace Clever.Collections.Tests
         {
             CheckContents(list, Array.Empty<T>());
 
-            var emptyBlock = list.GetBlock(0);
+            var emptyBlock = list.Blocks[0];
             Assert.Empty(emptyBlock);
-            Assert.Single(list.GetBlocks(), emptyBlock);
+            Assert.Single(list.Blocks, emptyBlock);
         }
 
         private static void CheckOptions<T>(BlockList<T> list, Options options)

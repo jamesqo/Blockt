@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 
 namespace Clever.Collections
 {
@@ -8,7 +9,8 @@ namespace Clever.Collections
     {
         public struct Enumerator : IEnumerator<T>
         {
-            private readonly BlockList<T> _list;
+            private readonly BlockView<T> _blocks;
+
             private Block<T> _currentBlock;
             private int _blockIndex;
             private int _elementIndex;
@@ -16,8 +18,10 @@ namespace Clever.Collections
             internal Enumerator(BlockList<T> list)
                 : this()
             {
-                _list = list;
-                _currentBlock = list.GetBlock(0);
+                Debug.Assert(list != null);
+
+                _blocks = list.Blocks;
+                _currentBlock = _blocks[0];
                 _elementIndex = -1;
             }
 
@@ -31,12 +35,12 @@ namespace Clever.Collections
             {
                 if (_elementIndex + 1 == _currentBlock.Count)
                 {
-                    if (_blockIndex + 1 == _list.BlockCount)
+                    if (_blockIndex + 1 == _blocks.Count)
                     {
                         return false;
                     }
 
-                    _currentBlock = _list.GetBlock(++_blockIndex);
+                    _currentBlock = _blocks[++_blockIndex];
                     _elementIndex = -1;
                 }
 

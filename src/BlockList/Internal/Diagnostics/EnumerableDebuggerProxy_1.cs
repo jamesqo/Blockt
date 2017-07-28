@@ -6,14 +6,14 @@ namespace Clever.Collections.Internal.Diagnostics
 {
     internal class EnumerableDebuggerProxy<T>
     {
-        private readonly IEnumerable<T> _enumerable;
+        private readonly IEnumerable<T> _items;
 
-        public EnumerableDebuggerProxy(IEnumerable<T> enumerable)
+        public EnumerableDebuggerProxy(IEnumerable<T> items)
         {
-            _enumerable = enumerable;
+            _items = items;
         }
 
         [DebuggerBrowsable(DebuggerBrowsableState.RootHidden)]
-        public T[] Contents => _enumerable.ToArray();
+        public T[] Items => _items.ToArray();
     }
 }

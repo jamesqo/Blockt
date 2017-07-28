@@ -46,6 +46,8 @@ namespace Clever.Collections
 
         public int BlockCount => _tail.Count + 1;
 
+        public BlockView<T> Blocks => new BlockView<T>(this);
+
         public int Capacity => _capacity;
 
         public int Count => _count;
@@ -58,13 +60,15 @@ namespace Clever.Collections
 
         public Options Options => _options;
 
+        internal Block<T> HeadSpan => new Block<T>(_head, _headCount);
+
+        internal SmallList<T[]> Tail => _tail;
+
         private string DebuggerDisplay => $"{nameof(Count)} = {Count}, {nameof(HeadCount)} = {HeadCount}, {nameof(HeadCapacity)} = {HeadCapacity}";
 
         private int HeadCapacity => _head.Length;
 
         private int HeadCount => _headCount;
-
-        private Block<T> HeadSpan => new Block<T>(_head, _headCount);
 
         public T this[int index]
         {
@@ -131,31 +135,7 @@ namespace Clever.Collections
         {
             Verify.ValidState(!IsEmpty, Strings.First_EmptyCollection);
 
-            return GetBlock(0).Array[0];
-        }
-
-        public Block<T> GetBlock(int index)
-        {
-            Verify.InRange(index >= 0 && index < BlockCount, nameof(index));
-
-            if (index < _tail.Count)
-            {
-                return new Block<T>(_tail[index]);
-            }
-
-            Debug.Assert(index == _tail.Count);
-            return HeadSpan;
-        }
-
-        public Block<T>[] GetBlocks()
-        {
-            var blocks = new Block<T>[BlockCount];
-            for (int i = 0; i < _tail.Count; i++)
-            {
-                blocks[i] = new Block<T>(_tail[i]);
-            }
-            blocks[_tail.Count] = HeadSpan;
-            return blocks;
+            return Blocks[0][0];
         }
 
         public Enumerator GetEnumerator() => new Enumerator(this);
@@ -415,13 +395,13 @@ namespace Clever.Collections
 
         private void ShiftEndLeft(int blockIndex, int elementIndex)
         {
-            var block = GetBlock(blockIndex);
+            var block = Blocks[blockIndex];
             Array.Copy(block.Array, elementIndex + 1, block.Array, elementIndex, block.Count - elementIndex - 1);
         }
 
         private void ShiftEndRight(int blockIndex, int elementIndex)
         {
-            var block = GetBlock(blockIndex);
+            var block = Blocks[blockIndex];
             Array.Copy(block.Array, elementIndex, block.Array, elementIndex + 1, block.Count - elementIndex - 1);
         }
 
@@ -429,7 +409,7 @@ namespace Clever.Collections
         {
             Debug.Assert(blockIndex > 0);
 
-            var block = GetBlock(blockIndex);
+            var block = Blocks[blockIndex];
             var predecessor = _tail[blockIndex - 1];
             Debug.Assert(!block.IsEmpty && predecessor.Length > 0);
 
@@ -441,7 +421,7 @@ namespace Clever.Collections
             Debug.Assert(blockIndex < _tail.Count);
 
             T[] block = _tail[blockIndex];
-            var successor = GetBlock(blockIndex + 1);
+            var successor = Blocks[blockIndex + 1];
             Debug.Assert(block.Length > 0 && !successor.IsEmpty);
 
             successor[0] = block.Last();
@@ -449,13 +429,13 @@ namespace Clever.Collections
 
         private void ShiftLeft(int blockIndex)
         {
-            var block = GetBlock(blockIndex);
+            var block = Blocks[blockIndex];
             Array.Copy(block.Array, 1, block.Array, 0, block.Count - 1);
         }
 
         private void ShiftRight(int blockIndex)
         {
-            var block = GetBlock(blockIndex);
+            var block = Blocks[blockIndex];
             Array.Copy(block.Array, 0, block.Array, 1, block.Count - 1);
         }
 
