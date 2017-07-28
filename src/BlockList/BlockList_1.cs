@@ -245,6 +245,9 @@ namespace Clever.Collections
 
         public void InsertRange(int index, IEnumerable<T> items)
         {
+            Verify.NotNull(items, nameof(items));
+            Verify.InRange(index >= 0 && index <= Count, nameof(index));
+
             foreach (T item in items)
             {
                 Insert(index++, item);
@@ -296,6 +299,18 @@ namespace Clever.Collections
             }
 
             RemoveLast();
+        }
+
+        // TODO: Make algorithm non-quadratic.
+        public void RemoveRange(int index, int count)
+        {
+            Verify.InRange(index >= 0, nameof(index));
+            Verify.InRange(count >= 0 && Count - index >= count, nameof(count));
+
+            for (int i = 0; i < count; i++)
+            {
+                RemoveAt(index);
+            }
         }
 
         public T[] ToArray()
@@ -441,10 +456,13 @@ namespace Clever.Collections
             Array.Copy(block.Array, 0, block.Array, 1, block.Count - 1);
         }
 
+        [ExcludeFromCodeCoverage]
         bool ICollection<T>.IsReadOnly => false;
 
+        [ExcludeFromCodeCoverage]
         IEnumerator<T> IEnumerable<T>.GetEnumerator() => GetEnumerator();
 
+        [ExcludeFromCodeCoverage]
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
     }
 }
