@@ -288,8 +288,7 @@ namespace Clever.Collections
                 var removePos = GetPosition(index);
                 ShiftEndLeft(removePos.BlockIndex, removePos.ElementIndex);
 
-                int blockIndex = removePos.BlockIndex + 1;
-                while (blockIndex <= _tail.Count)
+                for (int blockIndex = removePos.BlockIndex + 1; blockIndex <= _tail.Count; blockIndex++)
                 {
                     ShiftFirstLeft(blockIndex);
                     ShiftLeft(blockIndex);
@@ -356,6 +355,7 @@ namespace Clever.Collections
                 else
                 {
                     // Throw away the current head block and pretend we've just finished filling the last block.
+                    _capacity -= HeadCapacity;
                     _head = _tail.RemoveLast();
                     _headCount = _head.Length;
                 }
