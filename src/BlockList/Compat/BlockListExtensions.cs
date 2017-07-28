@@ -4,6 +4,7 @@ using Clever.Collections.Internal;
 
 namespace Clever.Collections.Compat
 {
+    // TODO: Now that the stupid predicate methods aren't here, cons. just moving into the class.
     public static class BlockListExtensions
     {
         public static ReadOnlyCollection<T> AsReadOnly<T>(this BlockList<T> list)
@@ -23,12 +24,10 @@ namespace Clever.Collections.Compat
 
         // TODO: LastIndexOf, all overloads.
 
-        // TODO: RemoveRange
-
         // TODO: Reverse, all overloads.
 
         // TODO: Sort will be tricky. (All overloads, again.)
 
-        // Would TrimExcess be applicable?
+        // Would TrimExcess be applicable? (It might be desirable.)
     }
 }

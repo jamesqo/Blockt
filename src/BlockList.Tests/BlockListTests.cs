@@ -347,7 +347,7 @@ namespace Clever.Collections.Tests
             void CheckCopyTo()
             {
                 var buffer = new T[list.Count];
-                list.CopyTo(buffer, 0);
+                list.CopyTo(buffer);
                 Assert.Equal(contents, buffer);
             }
 

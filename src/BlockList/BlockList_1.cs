@@ -119,6 +119,8 @@ namespace Clever.Collections
 
         public bool Contains(T item) => IndexOf(item) != -1;
 
+        public void CopyTo(T[] array) => CopyTo(array, 0);
+
         public void CopyTo(T[] array, int arrayIndex)
         {
             Verify.NotNull(array, nameof(array));
@@ -131,6 +133,31 @@ namespace Clever.Collections
             }
 
             Array.Copy(_head, 0, array, arrayIndex, _headCount);
+        }
+
+        public void CopyTo(int index, T[] array, int arrayIndex, int count)
+        {
+            Verify.InRange(index >= 0 && _count - index >= count, nameof(index));
+            Verify.NotNull(array, nameof(array));
+            Verify.InRange(arrayIndex >= 0 && array.Length - arrayIndex >= count, nameof(arrayIndex));
+            Verify.InRange(count >= 0, nameof(count));
+
+            if (count == 0)
+            {
+                return;
+            }
+
+            var copyPos = GetPosition(index);
+            CopyBlockEnd(copyPos.BlockIndex, copyPos.ElementIndex, array, ref arrayIndex, ref count);
+
+            for (int blockIndex = copyPos.BlockIndex + 1; blockIndex <= _tail.Count; blockIndex++)
+            {
+                if (count == 0)
+                {
+                    return;
+                }
+                CopyBlock(blockIndex, array, ref arrayIndex, ref count);
+            }
         }
 
         public T First()
@@ -321,8 +348,20 @@ namespace Clever.Collections
             }
 
             var array = new T[_count];
-            CopyTo(array, 0);
+            CopyTo(array);
             return array;
+        }
+
+        private void CopyBlock(int blockIndex, T[] array, ref int arrayIndex, ref int count)
+        {
+            var block = Blocks[blockIndex];
+            Array.Copy(block.Array, 0, array, arrayIndex, block.Count);
+        }
+
+        private void CopyBlockEnd(int blockIndex, int elementIndex, T[] array, ref int arrayIndex, ref int count)
+        {
+            var block = Blocks[blockIndex];
+            Array.Copy(block.Array, elementIndex, array, arrayIndex, count);
         }
 
         private Position GetPosition(int index)

@@ -4,6 +4,7 @@ namespace Clever.Collections
 {
     public static partial class BlockList
     {
+        // TODO: Position.FromBlock{Index}?
         internal struct Position
         {
             internal Position(int blockIndex, int elementIndex)
