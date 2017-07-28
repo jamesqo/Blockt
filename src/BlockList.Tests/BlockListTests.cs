@@ -213,13 +213,6 @@ namespace Clever.Collections.Tests
             Assert.Throws<InvalidOperationException>(() => new BlockList<int>().First());
         }
 
-        [Fact]
-        public void GetEnumerator_Reset_ThrowsNotSupported()
-        {
-            IEnumerable enumerable = new BlockList<int>();
-            Assert.Throws<NotSupportedException>(() => enumerable.GetEnumerator().Reset());
-        }
-
         [Theory]
         [MemberData(nameof(Insert_Data))]
         public void Insert(IEnumerable<int> items, Options options, int index, int item)
@@ -291,13 +284,6 @@ namespace Clever.Collections.Tests
                 x => GetTestIndices(x.items.Count(), exclusive: true).Select(
                     index => (x.items, x.options, index)))
             .ToTheoryData();
-
-        [Fact]
-        public void ICollection_IsReadOnly_ReturnsFalse()
-        {
-            ICollection<int> collection = new BlockList<int>();
-            Assert.False(collection.IsReadOnly);
-        }
 
         [Theory]
         [MemberData(nameof(Options_Equals_Data))]

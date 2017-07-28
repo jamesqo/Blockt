@@ -50,6 +50,7 @@ namespace Clever.Collections
 
         public bool IsEmpty => !IsDefault && Count == 0;
 
+        [ExcludeFromCodeCoverage]
         private string DebuggerDisplay => $"{nameof(Count)} = {Count}";
 
         public T this[int index]
@@ -109,20 +110,28 @@ namespace Clever.Collections
             return array;
         }
 
+        [ExcludeFromCodeCoverage]
         void IList<T>.Insert(int index, T item) => throw new NotSupportedException();
 
+        [ExcludeFromCodeCoverage]
         void IList<T>.RemoveAt(int index) => throw new NotSupportedException();
 
+        [ExcludeFromCodeCoverage]
         bool ICollection<T>.IsReadOnly => false;
 
+        [ExcludeFromCodeCoverage]
         void ICollection<T>.Add(T item) => throw new NotSupportedException();
 
+        [ExcludeFromCodeCoverage]
         void ICollection<T>.Clear() => throw new NotSupportedException();
 
+        [ExcludeFromCodeCoverage]
         bool ICollection<T>.Remove(T item) => throw new NotSupportedException();
 
+        [ExcludeFromCodeCoverage]
         IEnumerator<T> IEnumerable<T>.GetEnumerator() => GetEnumerator();
 
+        [ExcludeFromCodeCoverage]
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
     }
 }

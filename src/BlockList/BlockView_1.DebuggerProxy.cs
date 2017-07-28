@@ -5,6 +5,7 @@ namespace Clever.Collections
 {
     public partial struct BlockView<T>
     {
+        [ExcludeFromCodeCoverage]
         private class DebuggerProxy : EnumerableDebuggerProxy<Block<T>>
         {
             public DebuggerProxy(BlockView<T> view)

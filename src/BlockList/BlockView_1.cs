@@ -22,6 +22,7 @@ namespace Clever.Collections
 
         public int Count => _list.BlockCount;
 
+        [ExcludeFromCodeCoverage]
         private string DebuggerDisplay => $"{nameof(Count)} = {Count}";
 
         public Block<T> this[int index]
@@ -76,26 +77,35 @@ namespace Clever.Collections
             return blocks;
         }
 
+        [ExcludeFromCodeCoverage]
         Block<T> IList<Block<T>>.this[int index]
         {
             get => this[index];
             set => throw new NotSupportedException();
         }
 
+        [ExcludeFromCodeCoverage]
         void IList<Block<T>>.Insert(int index, Block<T> item) => throw new NotSupportedException();
 
+        [ExcludeFromCodeCoverage]
         void IList<Block<T>>.RemoveAt(int index) => throw new NotSupportedException();
 
+        [ExcludeFromCodeCoverage]
         bool ICollection<Block<T>>.IsReadOnly => true;
 
+        [ExcludeFromCodeCoverage]
         void ICollection<Block<T>>.Add(Block<T> item) => throw new NotSupportedException();
 
+        [ExcludeFromCodeCoverage]
         void ICollection<Block<T>>.Clear() => throw new NotSupportedException();
 
+        [ExcludeFromCodeCoverage]
         bool ICollection<Block<T>>.Remove(Block<T> item) => throw new NotSupportedException();
 
+        [ExcludeFromCodeCoverage]
         IEnumerator<Block<T>> IEnumerable<Block<T>>.GetEnumerator() => GetEnumerator();
 
+        [ExcludeFromCodeCoverage]
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
     }
 }

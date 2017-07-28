@@ -4,6 +4,7 @@ using System.Linq;
 
 namespace Clever.Collections.Internal.Diagnostics
 {
+    [ExcludeFromCodeCoverage]
     internal class EnumerableDebuggerProxy<T>
     {
         private readonly IEnumerable<T> _items;

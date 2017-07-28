@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
+using Clever.Collections.Internal.Diagnostics;
 
 namespace Clever.Collections
 {
@@ -48,8 +49,10 @@ namespace Clever.Collections
                 return true;
             }
 
+            [ExcludeFromCodeCoverage]
             object IEnumerator.Current => Current;
 
+            [ExcludeFromCodeCoverage]
             void IEnumerator.Reset() => throw new NotSupportedException();
         }
     }

@@ -8,6 +8,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using Clever.Collections.Internal.Diagnostics;
 
 namespace Clever.Collections
 {
@@ -35,8 +36,10 @@ namespace Clever.Collections
 
             public bool MoveNext() => ++_index < _count;
 
+            [ExcludeFromCodeCoverage]
             object IEnumerator.Current => Current;
 
+            [ExcludeFromCodeCoverage]
             void IEnumerator.Reset() => throw new NotSupportedException();
         }
     }

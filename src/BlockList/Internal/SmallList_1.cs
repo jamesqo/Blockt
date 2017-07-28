@@ -39,6 +39,7 @@ namespace Clever.Collections.Internal
         /// </summary>
         public int Count => _count;
 
+        [ExcludeFromCodeCoverage]
         private string DebuggerDisplay => $"{nameof(Count)} = {Count}";
 
         /// <summary>

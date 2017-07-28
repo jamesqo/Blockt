@@ -15,7 +15,7 @@ pushd "%~dp0src"
 for /d %%d in (*.Tests) do (
     pushd "%%d"
 
-    %OpenCoverPath% -target:%DotNetPath% -targetargs:"test" -register:user -filter:"+[*]* -[xunit*]*" -oldStyle
+    %OpenCoverPath% -target:%DotNetPath% -targetargs:"test" -register:user -filter:"+[*]* -[xunit*]*" -oldStyle -excludebyattribute:*.ExcludeFromCodeCoverageAttribute
 
     set TestAssembly="%%d"
     set TargetDirectory="%ReportDirectory:"=%\!TestAssembly:~1,-1!"

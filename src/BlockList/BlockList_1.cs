@@ -64,10 +64,12 @@ namespace Clever.Collections
 
         internal SmallList<T[]> Tail => _tail;
 
+        [ExcludeFromCodeCoverage]
         private string DebuggerDisplay => $"{nameof(Count)} = {Count}, {nameof(HeadCount)} = {HeadCount}, {nameof(HeadCapacity)} = {HeadCapacity}";
 
         private int HeadCapacity => _head.Length;
 
+        [ExcludeFromCodeCoverage]
         private int HeadCount => _headCount;
 
         public T this[int index]
