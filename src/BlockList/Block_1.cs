@@ -53,12 +53,7 @@ namespace Clever.Collections
         [ExcludeFromCodeCoverage]
         private string DebuggerDisplay => $"{nameof(Count)} = {Count}";
 
-        // TODO: Consider ref return instead.
-        public T this[int index]
-        {
-            get => Array[index];
-            set => Array[index] = value;
-        }
+        public ref T this[int index] => ref Array[index];
 
         public ArraySegment<T> AsArraySegment() => new ArraySegment<T>(Array, 0, Count);
 

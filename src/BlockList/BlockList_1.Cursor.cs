@@ -1,5 +1,7 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
+using Clever.Collections.Internal;
 
 namespace Clever.Collections
 {
@@ -8,16 +10,20 @@ namespace Clever.Collections
         // TODO: Debugger attributes
         public struct Cursor
         {
+            // end state if logical ind == count, or blockind == blockcnt?
+            // We don't want to keep arnd. the logical ind, perf overhead for Inc()
+            // ++_elementIndex >= cnt.
+            // end state: _blockIndex == _tail.Count, _block is empty, _elementIndex = 0
+            // Why not _elementIndex == -1? Since we consider new BlockList<>().Start
+            // Advantages of 0: less special-casing
+            // Advantages of -1: no >=, easy to check if end.
+            // Decision: 0
+
             private readonly BlockList<T> _list;
 
-            private Block<T> _block;
+            private Block<T> _block; // TODO: Expose property?
             private int _blockIndex;
             private int _elementIndex;
-
-            // TODO: Remove note?
-            // One advantage of returning a ref instead of get/set prop is since the compiler won't error when
-            // one tries to do GetCursor(i).Value = foo.
-            public ref T Value => throw null;
 
             internal Cursor(BlockList<T> list, int index)
                 : this()
@@ -29,8 +35,28 @@ namespace Clever.Collections
                 Seek(index);
             }
 
+            public int BlockIndex => _blockIndex;
+
+            public int ElementIndex => _elementIndex;
+
+            // TODO: Remove note?
+            // One advantage of returning a ref instead of get/set prop is since the compiler won't error when
+            // one tries to do GetCursor(i).Value = foo.
+            public ref T Value => ref _block[_elementIndex];
+
+            private bool IsAtEnd
+            {
+                get
+                {
+                    Debug.Assert(_blockIndex != _list.BlockCount || (_block.IsEmpty && _elementIndex == 0));
+                    return _blockIndex == _list.BlockCount;
+                }
+            }
+
             public void Add(int count)
             {
+                Verify.InRange(count >= 0, nameof(count));
+
                 for (int i = 0; i < count; i++)
                 {
                     Inc();
@@ -39,7 +65,9 @@ namespace Clever.Collections
 
             public void CopyTo(T[] array, int arrayIndex, int count)
             {
-                CopyBlockEnd(_blockIndex, _elementIndex, array, ref arrayIndex, ref count);
+                // TODO: Validation
+
+                _list.CopyBlockEnd(_blockIndex, _elementIndex, array, ref arrayIndex, ref count);
 
                 var tail = _list.Tail;
                 for (int blockIndex = _blockIndex + 1; blockIndex <= tail.Count; blockIndex++)
@@ -48,7 +76,7 @@ namespace Clever.Collections
                     {
                         return;
                     }
-                    CopyBlock(blockIndex, array, ref arrayIndex, ref count);
+                    _list.CopyBlock(blockIndex, array, ref arrayIndex, ref count);
                 }
             }
 
@@ -86,9 +114,9 @@ namespace Clever.Collections
 
             public void Insert(T item)
             {
-                if (index == _list.Count)
+                if (IsAtEnd)
                 {
-                    Add(item);
+                    _list.Add(item);
                     return;
                 }
 
@@ -100,14 +128,14 @@ namespace Clever.Collections
                 var tail = _list.Tail;
                 if (_blockIndex == tail.Count)
                 {
-                    ShiftEndRight(tail.Count, _elementIndex);
+                    _list.ShiftEndRight(tail.Count, _elementIndex);
                     // This must run first in case Head changes during Add.
                     _list.Head[_elementIndex] = item;
                     _list.Add(last);
                     return;
                 }
 
-                ShiftRight(tail.Count);
+                _list.ShiftRight(tail.Count);
 
                 {
                     int blockIndex = tail.Count - 1;
@@ -120,16 +148,16 @@ namespace Clever.Collections
 
                     while (true)
                     {
-                        ShiftLastRight(blockIndex);
+                        _list.ShiftLastRight(blockIndex);
                         if (blockIndex == _blockIndex)
                         {
                             break;
                         }
-                        ShiftRight(blockIndex);
+                        _list.ShiftRight(blockIndex);
                         blockIndex--;
                     }
 
-                    ShiftEndRight(_blockIndex, _elementIndex);
+                    _list.ShiftEndRight(_blockIndex, _elementIndex);
                     tail[_blockIndex][_elementIndex] = item;
                 }
             }
@@ -145,19 +173,16 @@ namespace Clever.Collections
 
             public void Remove()
             {
-                if (index < _count - 1)
-                {
-                    var removePos = GetPosition(index);
-                    ShiftEndLeft(removePos.BlockIndex, removePos.ElementIndex);
+                _list.ShiftEndLeft(_blockIndex, _elementIndex);
 
-                    for (int blockIndex = removePos.BlockIndex + 1; blockIndex <= _tail.Count; blockIndex++)
-                    {
-                        ShiftFirstLeft(blockIndex);
-                        ShiftLeft(blockIndex);
-                    }
+                var tail = _list.Tail;
+                for (int blockIndex = _blockIndex + 1; blockIndex <= tail.Count; blockIndex++)
+                {
+                    _list.ShiftFirstLeft(blockIndex);
+                    _list.ShiftLeft(blockIndex);
                 }
 
-                RemoveLast();
+                _list.RemoveLast();
             }
 
             public void RemoveRange(int count)
@@ -194,11 +219,101 @@ namespace Clever.Collections
 
             public void Subtract(int count)
             {
+                Verify.InRange(count >= 0, nameof(count));
+
                 for (int i = 0; i < count; i++)
                 {
                     Dec();
                 }
             }
+        }
+
+        private void CopyBlock(int blockIndex, T[] array, ref int arrayIndex, ref int count)
+        {
+            CopyBlockEnd(blockIndex, 0, array, ref arrayIndex, ref count);
+        }
+
+        private void CopyBlockEnd(int blockIndex, int elementIndex, T[] array, ref int arrayIndex, ref int count)
+        {
+            var block = Blocks[blockIndex];
+            int copyCount = Math.Min(count, block.Count);
+            Array.Copy(block.Array, elementIndex, array, arrayIndex, copyCount);
+
+            arrayIndex += copyCount;
+            count -= copyCount;
+        }
+
+        private void RemoveLast()
+        {
+            Debug.Assert(!IsEmpty);
+
+            _count--;
+            _head[--_headCount] = default(T);
+
+            // To maintain invariants, we need to make sure the head block isn't empty unless
+            // the entire block list is empty.
+            if (_headCount == 0)
+            {
+                if (_tail.IsEmpty)
+                {
+                    // The entire block list is empty, so revert to the initial state.
+                    Reset();
+                }
+                else
+                {
+                    // Throw away the current head block and pretend we've just finished filling the last block.
+                    _capacity -= HeadCapacity;
+                    _head = _tail.RemoveLast();
+                    _headCount = _head.Length;
+                }
+                Debug.Assert(IsFull);
+            }
+        }
+
+        private void ShiftEndLeft(int blockIndex, int elementIndex)
+        {
+            var block = Blocks[blockIndex];
+            Array.Copy(block.Array, elementIndex + 1, block.Array, elementIndex, block.Count - elementIndex - 1);
+        }
+
+        private void ShiftEndRight(int blockIndex, int elementIndex)
+        {
+            var block = Blocks[blockIndex];
+            Array.Copy(block.Array, elementIndex, block.Array, elementIndex + 1, block.Count - elementIndex - 1);
+        }
+
+        private void ShiftFirstLeft(int blockIndex)
+        {
+            Debug.Assert(blockIndex > 0);
+
+            var block = Blocks[blockIndex];
+            var predecessor = _tail[blockIndex - 1];
+            Debug.Assert(!block.IsEmpty && predecessor.Length > 0);
+
+            predecessor[predecessor.Length - 1] = block.First();
+        }
+
+        private void ShiftLastRight(int blockIndex)
+        {
+            Debug.Assert(blockIndex < _tail.Count);
+
+            T[] block = _tail[blockIndex];
+            var successor = Blocks[blockIndex + 1];
+            Debug.Assert(block.Length > 0 && !successor.IsEmpty);
+
+            successor[0] = block.Last();
+        }
+
+        private void ShiftLeft(int blockIndex)
+        {
+            var block = Blocks[blockIndex];
+            Array.Copy(block.Array, 1, block.Array, 0, block.Count - 1);
+        }
+
+        private void ShiftRight(int blockIndex)
+        {
+            var block = Blocks[blockIndex];
+            Array.Copy(block.Array, 0, block.Array, 1, block.Count - 1);
         }
     }
 }

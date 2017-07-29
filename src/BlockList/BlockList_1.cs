@@ -285,48 +285,6 @@ namespace Clever.Collections
             return array;
         }
 
-        private void CopyBlock(int blockIndex, T[] array, ref int arrayIndex, ref int count)
-        {
-            CopyBlockEnd(blockIndex, 0, array, ref arrayIndex, ref count);
-        }
-
-        private void CopyBlockEnd(int blockIndex, int elementIndex, T[] array, ref int arrayIndex, ref int count)
-        {
-            var block = Blocks[blockIndex];
-            int copyCount = Math.Min(count, block.Count);
-            Array.Copy(block.Array, elementIndex, array, arrayIndex, copyCount);
-
-            arrayIndex += copyCount;
-            count -= copyCount;
-        }
-
-        private void RemoveLast()
-        {
-            Debug.Assert(!IsEmpty);
-
-            _count--;
-            _head[--_headCount] = default(T);
-
-            // To maintain invariants, we need to make sure the head block isn't empty unless
-            // the entire block list is empty.
-            if (_headCount == 0)
-            {
-                if (_tail.IsEmpty)
-                {
-                    // The entire block list is empty, so revert to the initial state.
-                    Reset();
-                }
-                else
-                {
-                    // Throw away the current head block and pretend we've just finished filling the last block.
-                    _capacity -= HeadCapacity;
-                    _head = _tail.RemoveLast();
-                    _headCount = _head.Length;
-                }
-                Debug.Assert(IsFull);
-            }
-        }
-
         private void Reset()
         {
             _tail = new SmallList<T[]>();
@@ -357,52 +315,6 @@ namespace Clever.Collections
             _head = new T[nextCapacity];
             _headCount = 0;
             _capacity += nextCapacity;
-        }
-
-        private void ShiftEndLeft(int blockIndex, int elementIndex)
-        {
-            var block = Blocks[blockIndex];
-            Array.Copy(block.Array, elementIndex + 1, block.Array, elementIndex, block.Count - elementIndex - 1);
-        }
-
-        private void ShiftEndRight(int blockIndex, int elementIndex)
-        {
-            var block = Blocks[blockIndex];
-            Array.Copy(block.Array, elementIndex, block.Array, elementIndex + 1, block.Count - elementIndex - 1);
-        }
-
-        private void ShiftFirstLeft(int blockIndex)
-        {
-            Debug.Assert(blockIndex > 0);
-
-            var block = Blocks[blockIndex];
-            var predecessor = _tail[blockIndex - 1];
-            Debug.Assert(!block.IsEmpty && predecessor.Length > 0);
-
-            predecessor[predecessor.Length - 1] = block.First();
-        }
-
-        private void ShiftLastRight(int blockIndex)
-        {
-            Debug.Assert(blockIndex < _tail.Count);
-
-            T[] block = _tail[blockIndex];
-            var successor = Blocks[blockIndex + 1];
-            Debug.Assert(block.Length > 0 && !successor.IsEmpty);
-
-            successor[0] = block.Last();
-        }
-
-        private void ShiftLeft(int blockIndex)
-        {
-            var block = Blocks[blockIndex];
-            Array.Copy(block.Array, 1, block.Array, 0, block.Count - 1);
-        }
-
-        private void ShiftRight(int blockIndex)
-        {
-            var block = Blocks[blockIndex];
-            Array.Copy(block.Array, 0, block.Array, 1, block.Count - 1);
         }
 
         [ExcludeFromCodeCoverage]
