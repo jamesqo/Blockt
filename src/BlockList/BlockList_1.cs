@@ -339,6 +339,24 @@ namespace Clever.Collections
             }
         }
 
+        public void Reverse() => Reverse(0, _count);
+
+        public void Reverse(int index, int count)
+        {
+            Verify.InRange(index >= 0, nameof(index));
+            Verify.InRange(count >= 0 && _count - index >= count, nameof(count));
+
+            int i = index, j = index + count - 1;
+            while (i < j)
+            {
+                T temp = this[i];
+                this[i] = this[j];
+                this[j] = temp;
+                i++;
+                j--;
+            }
+        }
+
         public T[] ToArray()
         {
             if (IsEmpty)
