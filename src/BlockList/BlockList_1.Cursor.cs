@@ -21,7 +21,6 @@ namespace Clever.Collections
                 : this()
             {
                 Debug.Assert(list != null);
-                Debug.Assert(index >= 0);
 
                 _list = list;
                 Seek(index);
@@ -52,10 +51,21 @@ namespace Clever.Collections
             {
                 Verify.InRange(count >= 0, nameof(count));
 
-                for (int i = 0; i < count; i++)
+                while (true)
                 {
-                    Inc();
+                    int batchCount = _block.Count - _elementIndex;
+                    if (count < batchCount)
+                    {
+                        break;
+                    }
+
+                    count -= batchCount;
+                    _block = _list.Blocks[++_blockIndex];
+                    _elementIndex = 0;
                 }
+
+                Debug.Assert(count >= 0);
+                _elementIndex += count;
             }
 
             public void CopyTo(T[] array, int arrayIndex, int count)
@@ -240,10 +250,15 @@ namespace Clever.Collections
             {
                 Verify.InRange(count >= 0, nameof(count));
 
-                for (int i = 0; i < count; i++)
+                while (count > _elementIndex)
                 {
-                    Dec();
+                    count -= (_elementIndex + 1);
+                    _block = _list.Blocks[--_blockIndex];
+                    _elementIndex = _block.Count - 1;
                 }
+
+                Debug.Assert(count >= 0);
+                _elementIndex -= count;
             }
         }
 
