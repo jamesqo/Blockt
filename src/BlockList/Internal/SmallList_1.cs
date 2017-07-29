@@ -122,8 +122,10 @@ namespace Clever.Collections.Internal
             _array = newArray;
         }
 
+        [ExcludeFromCodeCoverage]
         IEnumerator<T> IEnumerable<T>.GetEnumerator() => GetEnumerator();
 
+        [ExcludeFromCodeCoverage]
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
     }
 }
