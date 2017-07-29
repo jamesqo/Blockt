@@ -354,14 +354,17 @@ namespace Clever.Collections
 
         private void CopyBlock(int blockIndex, T[] array, ref int arrayIndex, ref int count)
         {
-            var block = Blocks[blockIndex];
-            Array.Copy(block.Array, 0, array, arrayIndex, block.Count);
+            CopyBlockEnd(blockIndex, 0, array, ref arrayIndex, ref count);
         }
 
         private void CopyBlockEnd(int blockIndex, int elementIndex, T[] array, ref int arrayIndex, ref int count)
         {
             var block = Blocks[blockIndex];
-            Array.Copy(block.Array, elementIndex, array, arrayIndex, count);
+            int copyCount = Math.Min(count, block.Count);
+            Array.Copy(block.Array, elementIndex, array, arrayIndex, copyCount);
+
+            arrayIndex += copyCount;
+            count -= copyCount;
         }
 
         private Position GetPosition(int index)

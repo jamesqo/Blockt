@@ -16,8 +16,6 @@ namespace Clever.Collections.Compat
 
         // TODO: Implement BinarySearch() like List has.
 
-        // TODO: What about CopyTo(int, T[], int, int)?
-
         // TODO: Verify.NotNull list at the top everywhere.
 
         // TODO: IndexOf(T, int) and IndexOf(T, int, int).
