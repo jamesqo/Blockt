@@ -10,5 +10,8 @@
 
         public static string MoveToBlock_NotContiguous { get; } =
             "Cannot move a non-contiguous block list.";
+
+        public static string Remove_CursorAtEnd { get; } =
+            "Cannot remove an item when the cursor is at the end of the block list.";
     }
 }

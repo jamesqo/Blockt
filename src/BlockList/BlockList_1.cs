@@ -61,6 +61,10 @@ namespace Clever.Collections
 
         public Options Options => _options;
 
+        internal T[] Head => _head;
+
+        internal int HeadCount => _headCount;
+
         internal Block<T> HeadSpan => new Block<T>(_head, _headCount);
 
         internal SmallList<T[]> Tail => _tail;
@@ -69,9 +73,6 @@ namespace Clever.Collections
         private string DebuggerDisplay => $"{nameof(Count)} = {Count}, {nameof(HeadCount)} = {HeadCount}, {nameof(HeadCapacity)} = {HeadCapacity}";
 
         private int HeadCapacity => _head.Length;
-
-        [ExcludeFromCodeCoverage]
-        private int HeadCount => _headCount;
 
         public ref T this[int index]
         {
@@ -154,27 +155,7 @@ namespace Clever.Collections
 
         public void CopyTo(int index, T[] array, int arrayIndex, int count)
         {
-            Verify.InRange(index >= 0 && _count - index >= count, nameof(index));
-            Verify.NotNull(array, nameof(array));
-            Verify.InRange(arrayIndex >= 0 && array.Length - arrayIndex >= count, nameof(arrayIndex));
-            Verify.InRange(count >= 0, nameof(count));
-
-            if (count == 0)
-            {
-                return;
-            }
-
-            var copyPos = GetPosition(index);
-            CopyBlockEnd(copyPos.BlockIndex, copyPos.ElementIndex, array, ref arrayIndex, ref count);
-
-            for (int blockIndex = copyPos.BlockIndex + 1; blockIndex <= _tail.Count; blockIndex++)
-            {
-                if (count == 0)
-                {
-                    return;
-                }
-                CopyBlock(blockIndex, array, ref arrayIndex, ref count);
-            }
+            GetCursor(index).CopyTo(array, arrayIndex, count);
         }
 
         public T First()
@@ -183,6 +164,8 @@ namespace Clever.Collections
 
             return Blocks[0][0];
         }
+
+        public Cursor GetCursor(int index) => new Cursor(this, index);
 
         public Enumerator GetEnumerator() => new Enumerator(this);
 
@@ -207,67 +190,7 @@ namespace Clever.Collections
         {
             Verify.InRange(index >= 0 && index <= _count, nameof(index));
 
-            if (index == _count)
-            {
-                Add(item);
-                return;
-            }
-
-            Debug.Assert(!IsEmpty);
-
-            // Here's how this procedure will look like when the insert position is 2 blocks
-            // behind the head block.
-
-            // Capture last item.
-            // Shift at _tail.Count (head).
-            // Add last item (only for head).
-            // Move up.
-            // Shift last item: done with _tail.Count (head).
-            // Shift at _tail.Count - 1.
-            // Move up.
-            // Shift last item: done with _tail.Count - 1.
-            // Shift end at _tail.Count - 2 (only the part after the insert position).
-            // Write the item.
-
-            T last = Last();
-            var insertPos = GetPosition(index);
-
-            // We have to special-case when the insert position is in the head block,
-            // since we must also add the last item after ShiftEnd() is called.
-            if (insertPos.BlockIndex == _tail.Count)
-            {
-                ShiftEndRight(_tail.Count, insertPos.ElementIndex);
-                // This must run first in case _head changes during Add.
-                _head[insertPos.ElementIndex] = item;
-                Add(last);
-                return;
-            }
-
-            ShiftRight(_tail.Count);
-
-            {
-                int blockIndex = _tail.Count - 1;
-                // Since the insert position wasn't in the head block, it must be in a block
-                // preceding the head block, and that means there are multiple blocks.
-                Debug.Assert(blockIndex >= 0);
-
-                // Add() must run after calculating blockIndex, in case it affects _tail.Count.
-                Add(last);
-
-                while (true)
-                {
-                    ShiftLastRight(blockIndex);
-                    if (blockIndex == insertPos.BlockIndex)
-                    {
-                        break;
-                    }
-                    ShiftRight(blockIndex);
-                    blockIndex--;
-                }
-
-                ShiftEndRight(blockIndex, insertPos.ElementIndex);
-                _tail[blockIndex][insertPos.ElementIndex] = item;
-            }
+            GetCursor(index).Insert(item);
         }
 
         public void InsertRange(int index, IEnumerable<T> items)
@@ -275,10 +198,7 @@ namespace Clever.Collections
             Verify.NotNull(items, nameof(items));
             Verify.InRange(index >= 0 && index <= Count, nameof(index));
 
-            foreach (T item in items)
-            {
-                Insert(index++, item);
-            }
+            GetCursor(index).InsertRange(items);
         }
 
         public T Last()
@@ -313,19 +233,7 @@ namespace Clever.Collections
         {
             Verify.InRange(index >= 0 && index < _count, nameof(index));
 
-            if (index < _count - 1)
-            {
-                var removePos = GetPosition(index);
-                ShiftEndLeft(removePos.BlockIndex, removePos.ElementIndex);
-
-                for (int blockIndex = removePos.BlockIndex + 1; blockIndex <= _tail.Count; blockIndex++)
-                {
-                    ShiftFirstLeft(blockIndex);
-                    ShiftLeft(blockIndex);
-                }
-            }
-
-            RemoveLast();
+            GetCursor(index).Remove();
         }
 
         public void RemoveRange(int index, int count)
@@ -333,10 +241,7 @@ namespace Clever.Collections
             Verify.InRange(index >= 0, nameof(index));
             Verify.InRange(count >= 0 && Count - index >= count, nameof(count));
 
-            for (int i = 0; i < count; i++)
-            {
-                RemoveAt(index);
-            }
+            GetCursor(index).RemoveRange(count);
         }
 
         public void Reverse() => Reverse(0, _count);
@@ -346,14 +251,15 @@ namespace Clever.Collections
             Verify.InRange(index >= 0, nameof(index));
             Verify.InRange(count >= 0 && _count - index >= count, nameof(count));
 
-            int i = index, j = index + count - 1;
+            var i = GetCursor(index);
+            var j = GetCursor(index + count - 1);
             while (i < j)
             {
-                T temp = this[i];
-                this[i] = this[j];
-                this[j] = temp;
-                i++;
-                j--;
+                T temp = i.Value;
+                i.Value = j.Value;
+                j.Value = temp;
+                i.Inc();
+                j.Dec();
             }
         }
 
@@ -367,74 +273,6 @@ namespace Clever.Collections
             var array = new T[_count];
             CopyTo(array);
             return array;
-        }
-
-        private void CopyBlock(int blockIndex, T[] array, ref int arrayIndex, ref int count)
-        {
-            CopyBlockEnd(blockIndex, 0, array, ref arrayIndex, ref count);
-        }
-
-        private void CopyBlockEnd(int blockIndex, int elementIndex, T[] array, ref int arrayIndex, ref int count)
-        {
-            var block = Blocks[blockIndex];
-            int copyCount = Math.Min(count, block.Count);
-            Array.Copy(block.Array, elementIndex, array, arrayIndex, copyCount);
-
-            arrayIndex += copyCount;
-            count -= copyCount;
-        }
-
-        private Position GetPosition(int index)
-        {
-            Debug.Assert(index >= 0 && index < _count);
-
-            int blockIndex = -1, elementIndex = index;
-
-            for (int i = 0; i < _tail.Count; i++)
-            {
-                T[] block = _tail[i];
-                if (elementIndex < block.Length)
-                {
-                    blockIndex = i;
-                    break;
-                }
-                elementIndex -= block.Length;
-            }
-
-            if (blockIndex == -1)
-            {
-                Debug.Assert(elementIndex < _headCount);
-                blockIndex = _tail.Count;
-            }
-
-            return new Position(blockIndex, elementIndex);
-        }
-
-        private void RemoveLast()
-        {
-            Debug.Assert(!IsEmpty);
-
-            _count--;
-            _head[--_headCount] = default(T);
-
-            // To maintain invariants, we need to make sure the head block isn't empty unless
-            // the entire block list is empty.
-            if (_headCount == 0)
-            {
-                if (_tail.IsEmpty)
-                {
-                    // The entire block list is empty, so revert to the initial state.
-                    Reset();
-                }
-                else
-                {
-                    // Throw away the current head block and pretend we've just finished filling the last block.
-                    _capacity -= HeadCapacity;
-                    _head = _tail.RemoveLast();
-                    _headCount = _head.Length;
-                }
-                Debug.Assert(IsFull);
-            }
         }
 
         private void Reset()
@@ -467,52 +305,6 @@ namespace Clever.Collections
             _head = new T[nextCapacity];
             _headCount = 0;
             _capacity += nextCapacity;
-        }
-
-        private void ShiftEndLeft(int blockIndex, int elementIndex)
-        {
-            var block = Blocks[blockIndex];
-            Array.Copy(block.Array, elementIndex + 1, block.Array, elementIndex, block.Count - elementIndex - 1);
-        }
-
-        private void ShiftEndRight(int blockIndex, int elementIndex)
-        {
-            var block = Blocks[blockIndex];
-            Array.Copy(block.Array, elementIndex, block.Array, elementIndex + 1, block.Count - elementIndex - 1);
-        }
-
-        private void ShiftFirstLeft(int blockIndex)
-        {
-            Debug.Assert(blockIndex > 0);
-
-            var block = Blocks[blockIndex];
-            var predecessor = _tail[blockIndex - 1];
-            Debug.Assert(!block.IsEmpty && predecessor.Length > 0);
-
-            predecessor[predecessor.Length - 1] = block.First();
-        }
-
-        private void ShiftLastRight(int blockIndex)
-        {
-            Debug.Assert(blockIndex < _tail.Count);
-
-            T[] block = _tail[blockIndex];
-            var successor = Blocks[blockIndex + 1];
-            Debug.Assert(block.Length > 0 && !successor.IsEmpty);
-
-            successor[0] = block.Last();
-        }
-
-        private void ShiftLeft(int blockIndex)
-        {
-            var block = Blocks[blockIndex];
-            Array.Copy(block.Array, 1, block.Array, 0, block.Count - 1);
-        }
-
-        private void ShiftRight(int blockIndex)
-        {
-            var block = Blocks[blockIndex];
-            Array.Copy(block.Array, 0, block.Array, 1, block.Count - 1);
         }
 
         [ExcludeFromCodeCoverage]
