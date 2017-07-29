@@ -73,10 +73,24 @@ namespace Clever.Collections
         [ExcludeFromCodeCoverage]
         private int HeadCount => _headCount;
 
-        public T this[int index]
+        public ref T this[int index]
         {
-            get => GetRef(index);
-            set => GetRef(index) = value;
+            get
+            {
+                Verify.InRange(index >= 0 && index < _count, nameof(index));
+
+                foreach (T[] block in _tail)
+                {
+                    if (index < block.Length)
+                    {
+                        return ref block[index];
+                    }
+                    index -= block.Length;
+                }
+
+                Debug.Assert(index < _head.Length);
+                return ref _head[index];
+            }
         }
 
         public void Add(T item)
@@ -171,23 +185,6 @@ namespace Clever.Collections
         }
 
         public Enumerator GetEnumerator() => new Enumerator(this);
-
-        public ref T GetRef(int index)
-        {
-            Verify.InRange(index >= 0 && index < _count, nameof(index));
-
-            foreach (T[] block in _tail)
-            {
-                if (index < block.Length)
-                {
-                    return ref block[index];
-                }
-                index -= block.Length;
-            }
-
-            Debug.Assert(index < _head.Length);
-            return ref _head[index];
-        }
 
         public int IndexOf(T item)
         {
@@ -331,7 +328,6 @@ namespace Clever.Collections
             RemoveLast();
         }
 
-        // TODO: Make algorithm non-quadratic.
         public void RemoveRange(int index, int count)
         {
             Verify.InRange(index >= 0, nameof(index));
@@ -500,6 +496,16 @@ namespace Clever.Collections
             var block = Blocks[blockIndex];
             Array.Copy(block.Array, 0, block.Array, 1, block.Count - 1);
         }
+
+        [ExcludeFromCodeCoverage]
+        T IList<T>.this[int index]
+        {
+            get => this[index];
+            set => this[index] = value;
+        }
+
+        [ExcludeFromCodeCoverage]
+        T IReadOnlyList<T>.this[int index] => this[index];
 
         [ExcludeFromCodeCoverage]
         bool ICollection<T>.IsReadOnly => false;
