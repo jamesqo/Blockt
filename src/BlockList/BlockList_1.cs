@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Diagnostics;
 using Clever.Collections.Internal;
 using Clever.Collections.Internal.Diagnostics;
@@ -98,6 +99,8 @@ namespace Clever.Collections
                 Add(item);
             }
         }
+
+        public ReadOnlyCollection<T> AsReadOnly() => new ReadOnlyCollection<T>(this);
 
         public void Clear()
         {
