@@ -2,26 +2,19 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using Clever.Collections.Internal;
+using Clever.Collections.Internal.Diagnostics;
 
 namespace Clever.Collections
 {
     public partial class BlockList<T>
     {
         // TODO: Debugger attributes
+        [DebuggerDisplay(DebuggerStrings.DisplayFormat)]
         public struct Cursor
         {
-            // end state if logical ind == count, or blockind == blockcnt?
-            // We don't want to keep arnd. the logical ind, perf overhead for Inc()
-            // ++_elementIndex >= cnt.
-            // end state: _blockIndex == _tail.Count, _block is empty, _elementIndex = 0
-            // Why not _elementIndex == -1? Since we consider new BlockList<>().Start
-            // Advantages of 0: less special-casing
-            // Advantages of -1: no >=, easy to check if end.
-            // Decision: 0
-
             private readonly BlockList<T> _list;
 
-            private Block<T> _block; // TODO: Expose property?
+            private Block<T> _block;
             private int _blockIndex;
             private int _elementIndex;
 
@@ -35,21 +28,24 @@ namespace Clever.Collections
                 Seek(index);
             }
 
+            public Block<T> Block => _block;
+
             public int BlockIndex => _blockIndex;
 
             public int ElementIndex => _elementIndex;
 
-            // TODO: Remove note?
-            // One advantage of returning a ref instead of get/set prop is since the compiler won't error when
-            // one tries to do GetCursor(i).Value = foo.
             public ref T Value => ref _block[_elementIndex];
+
+            [ExcludeFromCodeCoverage]
+            private string DebuggerDisplay => $"({BlockIndex}, {ElementIndex})";
 
             private bool IsAtEnd
             {
                 get
                 {
-                    Debug.Assert(_blockIndex != _list.BlockCount || (_block.IsEmpty && _elementIndex == 0));
-                    return _blockIndex == _list.BlockCount;
+                    bool result = _blockIndex == _list.BlockCount;
+                    Debug.Assert(!result || (_block.IsEmpty && _elementIndex == 0));
+                    return result;
                 }
             }
 
@@ -65,7 +61,14 @@ namespace Clever.Collections
 
             public void CopyTo(T[] array, int arrayIndex, int count)
             {
-                // TODO: Validation
+                Verify.NotNull(array, nameof(array));
+                Verify.InRange(arrayIndex >= 0, nameof(arrayIndex));
+                Verify.InRange(count >= 0 && array.Length - arrayIndex >= count, nameof(count));
+
+                if (count == 0)
+                {
+                    return;
+                }
 
                 _list.CopyBlockEnd(_blockIndex, _elementIndex, array, ref arrayIndex, ref count);
 
@@ -124,7 +127,7 @@ namespace Clever.Collections
                 T last = _list.Last();
 
                 // We have to special-case when the insert position is in the head block,
-                // since we must also add the last item after ShiftEnd() is called.
+                // since we must also add the last item after ShiftEndRight() is called.
                 var tail = _list.Tail;
                 if (_blockIndex == tail.Count)
                 {
@@ -143,7 +146,7 @@ namespace Clever.Collections
                     // preceding the head block, and that means there are multiple blocks.
                     Debug.Assert(blockIndex >= 0);
 
-                    // Add() must run after calculating blockIndex, in case it affects _tail.Count.
+                    // Add() must run after calculating the block index, in case it affects tail.Count.
                     _list.Add(last);
 
                     while (true)
@@ -195,8 +198,13 @@ namespace Clever.Collections
 
             public void Seek(int index)
             {
-                // TODO: Change to Verify. Also, what if index == Count?
-                Debug.Assert(index >= 0 && index < _list.Count);
+                Verify.InRange(index >= 0 && index <= _list.Count, nameof(index));
+
+                if (index == _list.Count)
+                {
+                    SeekToEnd();
+                    return;
+                }
 
                 _elementIndex = index;
 
@@ -207,14 +215,22 @@ namespace Clever.Collections
                     if (_elementIndex < block.Length)
                     {
                         _blockIndex = i;
+                        _block = _list.Blocks[_blockIndex];
                         return;
                     }
                     _elementIndex -= block.Length;
                 }
 
-                // TODO: <=
                 Debug.Assert(_elementIndex < _list.HeadCount);
                 _blockIndex = tail.Count;
+                _block = _list.Blocks[_blockIndex];
+            }
+
+            public void SeekToEnd()
+            {
+                _blockIndex = _list.BlockCount;
+                _block = Block<T>.Empty;
+                _elementIndex = 0;
             }
 
             public void Subtract(int count)

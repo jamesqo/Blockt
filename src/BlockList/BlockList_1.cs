@@ -155,16 +155,6 @@ namespace Clever.Collections
 
         public void CopyTo(int index, T[] array, int arrayIndex, int count)
         {
-            Verify.InRange(index >= 0 && _count - index >= count, nameof(index));
-            Verify.NotNull(array, nameof(array));
-            Verify.InRange(arrayIndex >= 0 && array.Length - arrayIndex >= count, nameof(arrayIndex));
-            Verify.InRange(count >= 0, nameof(count));
-
-            if (count == 0)
-            {
-                return;
-            }
-
             GetCursor(index).CopyTo(array, arrayIndex, count);
         }
 

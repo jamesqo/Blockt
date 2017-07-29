@@ -19,6 +19,8 @@ namespace Clever.Collections
     [DebuggerTypeProxy(typeof(EnumerableDebuggerProxy<>))]
     public partial struct Block<T> : IList<T>, IReadOnlyList<T>, IEquatable<Block<T>>
     {
+        internal static Block<T> Empty { get; } = new Block<T>(SystemArray.Empty<T>());
+
         internal Block(T[] array)
         {
             Verify.NotNull(array, nameof(array));
@@ -107,10 +109,20 @@ namespace Clever.Collections
         }
 
         [ExcludeFromCodeCoverage]
+        T IList<T>.this[int index]
+        {
+            get => this[index];
+            set => this[index] = value;
+        }
+
+        [ExcludeFromCodeCoverage]
         void IList<T>.Insert(int index, T item) => throw new NotSupportedException();
 
         [ExcludeFromCodeCoverage]
         void IList<T>.RemoveAt(int index) => throw new NotSupportedException();
+
+        [ExcludeFromCodeCoverage]
+        T IReadOnlyList<T>.this[int index] => this[index];
 
         [ExcludeFromCodeCoverage]
         bool ICollection<T>.IsReadOnly => false;
