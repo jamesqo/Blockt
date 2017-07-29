@@ -61,6 +61,10 @@ namespace Clever.Collections
 
         public Options Options => _options;
 
+        internal T[] Head => _head;
+
+        internal int HeadCount => _headCount;
+
         internal Block<T> HeadSpan => new Block<T>(_head, _headCount);
 
         internal SmallList<T[]> Tail => _tail;
@@ -69,9 +73,6 @@ namespace Clever.Collections
         private string DebuggerDisplay => $"{nameof(Count)} = {Count}, {nameof(HeadCount)} = {HeadCount}, {nameof(HeadCapacity)} = {HeadCapacity}";
 
         private int HeadCapacity => _head.Length;
-
-        [ExcludeFromCodeCoverage]
-        private int HeadCount => _headCount;
 
         public ref T this[int index]
         {
@@ -164,17 +165,7 @@ namespace Clever.Collections
                 return;
             }
 
-            var copyPos = GetPosition(index);
-            CopyBlockEnd(copyPos.BlockIndex, copyPos.ElementIndex, array, ref arrayIndex, ref count);
-
-            for (int blockIndex = copyPos.BlockIndex + 1; blockIndex <= _tail.Count; blockIndex++)
-            {
-                if (count == 0)
-                {
-                    return;
-                }
-                CopyBlock(blockIndex, array, ref arrayIndex, ref count);
-            }
+            GetCursor(index).CopyTo(array, arrayIndex, count);
         }
 
         public T First()
@@ -209,67 +200,7 @@ namespace Clever.Collections
         {
             Verify.InRange(index >= 0 && index <= _count, nameof(index));
 
-            if (index == _count)
-            {
-                Add(item);
-                return;
-            }
-
-            Debug.Assert(!IsEmpty);
-
-            // Here's how this procedure will look like when the insert position is 2 blocks
-            // behind the head block.
-
-            // Capture last item.
-            // Shift at _tail.Count (head).
-            // Add last item (only for head).
-            // Move up.
-            // Shift last item: done with _tail.Count (head).
-            // Shift at _tail.Count - 1.
-            // Move up.
-            // Shift last item: done with _tail.Count - 1.
-            // Shift end at _tail.Count - 2 (only the part after the insert position).
-            // Write the item.
-
-            T last = Last();
-            var insertPos = GetPosition(index);
-
-            // We have to special-case when the insert position is in the head block,
-            // since we must also add the last item after ShiftEnd() is called.
-            if (insertPos.BlockIndex == _tail.Count)
-            {
-                ShiftEndRight(_tail.Count, insertPos.ElementIndex);
-                // This must run first in case _head changes during Add.
-                _head[insertPos.ElementIndex] = item;
-                Add(last);
-                return;
-            }
-
-            ShiftRight(_tail.Count);
-
-            {
-                int blockIndex = _tail.Count - 1;
-                // Since the insert position wasn't in the head block, it must be in a block
-                // preceding the head block, and that means there are multiple blocks.
-                Debug.Assert(blockIndex >= 0);
-
-                // Add() must run after calculating blockIndex, in case it affects _tail.Count.
-                Add(last);
-
-                while (true)
-                {
-                    ShiftLastRight(blockIndex);
-                    if (blockIndex == insertPos.BlockIndex)
-                    {
-                        break;
-                    }
-                    ShiftRight(blockIndex);
-                    blockIndex--;
-                }
-
-                ShiftEndRight(blockIndex, insertPos.ElementIndex);
-                _tail[blockIndex][insertPos.ElementIndex] = item;
-            }
+            GetCursor(index).Insert(item);
         }
 
         public void InsertRange(int index, IEnumerable<T> items)
@@ -277,10 +208,7 @@ namespace Clever.Collections
             Verify.NotNull(items, nameof(items));
             Verify.InRange(index >= 0 && index <= Count, nameof(index));
 
-            foreach (T item in items)
-            {
-                Insert(index++, item);
-            }
+            GetCursor(index).InsertRange(items);
         }
 
         public T Last()
@@ -315,19 +243,7 @@ namespace Clever.Collections
         {
             Verify.InRange(index >= 0 && index < _count, nameof(index));
 
-            if (index < _count - 1)
-            {
-                var removePos = GetPosition(index);
-                ShiftEndLeft(removePos.BlockIndex, removePos.ElementIndex);
-
-                for (int blockIndex = removePos.BlockIndex + 1; blockIndex <= _tail.Count; blockIndex++)
-                {
-                    ShiftFirstLeft(blockIndex);
-                    ShiftLeft(blockIndex);
-                }
-            }
-
-            RemoveLast();
+            GetCursor(index).Remove();
         }
 
         public void RemoveRange(int index, int count)
@@ -335,10 +251,7 @@ namespace Clever.Collections
             Verify.InRange(index >= 0, nameof(index));
             Verify.InRange(count >= 0 && Count - index >= count, nameof(count));
 
-            for (int i = 0; i < count; i++)
-            {
-                RemoveAt(index);
-            }
+            GetCursor(index).RemoveRange(count);
         }
 
         public void Reverse() => Reverse(0, _count);
@@ -385,32 +298,6 @@ namespace Clever.Collections
 
             arrayIndex += copyCount;
             count -= copyCount;
-        }
-
-        private Position GetPosition(int index)
-        {
-            Debug.Assert(index >= 0 && index < _count);
-
-            int blockIndex = -1, elementIndex = index;
-
-            for (int i = 0; i < _tail.Count; i++)
-            {
-                T[] block = _tail[i];
-                if (elementIndex < block.Length)
-                {
-                    blockIndex = i;
-                    break;
-                }
-                elementIndex -= block.Length;
-            }
-
-            if (blockIndex == -1)
-            {
-                Debug.Assert(elementIndex < _headCount);
-                blockIndex = _tail.Count;
-            }
-
-            return new Position(blockIndex, elementIndex);
         }
 
         private void RemoveLast()
