@@ -8,7 +8,6 @@ namespace Clever.Collections
 {
     public partial class BlockList<T>
     {
-        // TODO: Debugger attributes
         [DebuggerDisplay(DebuggerStrings.DisplayFormat)]
         public struct Cursor
         {
@@ -176,6 +175,8 @@ namespace Clever.Collections
 
             public void Remove()
             {
+                Verify.ValidState(!IsAtEnd, Strings.Remove_CursorAtEnd);
+
                 _list.ShiftEndLeft(_blockIndex, _elementIndex);
 
                 var tail = _list.Tail;
@@ -190,6 +191,8 @@ namespace Clever.Collections
 
             public void RemoveRange(int count)
             {
+                Verify.InRange(count >= 0, nameof(count));
+
                 for (int i = 0; i < count; i++)
                 {
                     Remove();
