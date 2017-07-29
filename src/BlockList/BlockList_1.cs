@@ -184,6 +184,8 @@ namespace Clever.Collections
             return Blocks[0][0];
         }
 
+        public Cursor GetCursor(int index) => new Cursor(this, index);
+
         public Enumerator GetEnumerator() => new Enumerator(this);
 
         public int IndexOf(T item)
@@ -346,14 +348,15 @@ namespace Clever.Collections
             Verify.InRange(index >= 0, nameof(index));
             Verify.InRange(count >= 0 && _count - index >= count, nameof(count));
 
-            int i = index, j = index + count - 1;
+            var i = GetCursor(index);
+            var j = GetCursor(index + count - 1);
             while (i < j)
             {
-                T temp = this[i];
-                this[i] = this[j];
-                this[j] = temp;
-                i++;
-                j--;
+                T temp = i.Value;
+                i.Value = j.Value;
+                j.Value = temp;
+                i.Inc();
+                j.Dec();
             }
         }
 
