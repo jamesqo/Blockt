@@ -285,52 +285,6 @@ namespace Clever.Collections.Tests
                     index => (x.items, x.options, index)))
             .ToTheoryData();
 
-        [Theory]
-        [MemberData(nameof(Options_Equals_Data))]
-        public void Options_Equals(Options opts, object obj, bool expected)
-        {
-            Debug.Assert(opts != null && obj != null);
-
-            if (obj is Options other)
-            {
-                Assert.Equal(expected, opts.Equals(other));
-                Assert.Equal(expected, other.Equals(opts));
-            }
-
-            Assert.Equal(expected, opts.Equals(obj));
-            Assert.Equal(expected, obj.Equals(opts));
-        }
-
-        public static IEnumerable<object[]> Options_Equals_Data()
-            => TestOptions.SelectMany((outerOpts, outerIndex) =>
-            {
-                // Case 1: The comparand is also an Options, and Equals() might be true.
-                var testCases = TestOptions.Select(
-                    (innerOpts, innerIndex) => (outerOpts, (object)innerOpts, expected: outerIndex == innerIndex));
-                // Case 2: The comparand is some other type, and Equals() is never true.
-                return testCases.Concat(new[]
-                {
-                    (outerOpts, "text", expected: false),
-                    (outerOpts, new object(), expected: false),
-                    (outerOpts, 42, expected: false)
-                });
-            })
-            .ToTheoryData();
-
-        [Theory]
-        [MemberData(nameof(TestOptions_Data))]
-        public void Options_Equals_Null_ReturnsFalse(Options opts)
-        {
-            Assert.False(opts.Equals(null));
-            Assert.False(opts.Equals((object)null));
-        }
-
-        [Fact]
-        public void Options_ImplementsIEquatable()
-        {
-            Assert.IsAssignableFrom<IEquatable<Options>>(DefaultOptions);
-        }
-
         private static void CheckContents<T>(BlockList<T> list, IEnumerable<T> contents)
         {
             void CheckBlocks()
@@ -347,7 +301,7 @@ namespace Clever.Collections.Tests
             void CheckCopyTo()
             {
                 var buffer = new T[list.Count];
-                list.CopyTo(buffer, 0);
+                list.CopyTo(buffer);
                 Assert.Equal(contents, buffer);
             }
 

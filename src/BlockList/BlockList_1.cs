@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Diagnostics;
 using Clever.Collections.Internal;
 using Clever.Collections.Internal.Diagnostics;
@@ -72,10 +73,24 @@ namespace Clever.Collections
         [ExcludeFromCodeCoverage]
         private int HeadCount => _headCount;
 
-        public T this[int index]
+        public ref T this[int index]
         {
-            get => GetRef(index);
-            set => GetRef(index) = value;
+            get
+            {
+                Verify.InRange(index >= 0 && index < _count, nameof(index));
+
+                foreach (T[] block in _tail)
+                {
+                    if (index < block.Length)
+                    {
+                        return ref block[index];
+                    }
+                    index -= block.Length;
+                }
+
+                Debug.Assert(index < _head.Length);
+                return ref _head[index];
+            }
         }
 
         public void Add(T item)
@@ -99,6 +114,8 @@ namespace Clever.Collections
             }
         }
 
+        public ReadOnlyCollection<T> AsReadOnly() => new ReadOnlyCollection<T>(this);
+
         public void Clear()
         {
             // Capture relevant state in local variables, so we can use them after Reset() wipes the fields.
@@ -119,6 +136,8 @@ namespace Clever.Collections
 
         public bool Contains(T item) => IndexOf(item) != -1;
 
+        public void CopyTo(T[] array) => CopyTo(array, 0);
+
         public void CopyTo(T[] array, int arrayIndex)
         {
             Verify.NotNull(array, nameof(array));
@@ -133,6 +152,31 @@ namespace Clever.Collections
             Array.Copy(_head, 0, array, arrayIndex, _headCount);
         }
 
+        public void CopyTo(int index, T[] array, int arrayIndex, int count)
+        {
+            Verify.InRange(index >= 0 && _count - index >= count, nameof(index));
+            Verify.NotNull(array, nameof(array));
+            Verify.InRange(arrayIndex >= 0 && array.Length - arrayIndex >= count, nameof(arrayIndex));
+            Verify.InRange(count >= 0, nameof(count));
+
+            if (count == 0)
+            {
+                return;
+            }
+
+            var copyPos = GetPosition(index);
+            CopyBlockEnd(copyPos.BlockIndex, copyPos.ElementIndex, array, ref arrayIndex, ref count);
+
+            for (int blockIndex = copyPos.BlockIndex + 1; blockIndex <= _tail.Count; blockIndex++)
+            {
+                if (count == 0)
+                {
+                    return;
+                }
+                CopyBlock(blockIndex, array, ref arrayIndex, ref count);
+            }
+        }
+
         public T First()
         {
             Verify.ValidState(!IsEmpty, Strings.First_EmptyCollection);
@@ -141,23 +185,6 @@ namespace Clever.Collections
         }
 
         public Enumerator GetEnumerator() => new Enumerator(this);
-
-        public ref T GetRef(int index)
-        {
-            Verify.InRange(index >= 0 && index < _count, nameof(index));
-
-            foreach (T[] block in _tail)
-            {
-                if (index < block.Length)
-                {
-                    return ref block[index];
-                }
-                index -= block.Length;
-            }
-
-            Debug.Assert(index < _head.Length);
-            return ref _head[index];
-        }
 
         public int IndexOf(T item)
         {
@@ -245,6 +272,9 @@ namespace Clever.Collections
 
         public void InsertRange(int index, IEnumerable<T> items)
         {
+            Verify.NotNull(items, nameof(items));
+            Verify.InRange(index >= 0 && index <= Count, nameof(index));
+
             foreach (T item in items)
             {
                 Insert(index++, item);
@@ -298,6 +328,17 @@ namespace Clever.Collections
             RemoveLast();
         }
 
+        public void RemoveRange(int index, int count)
+        {
+            Verify.InRange(index >= 0, nameof(index));
+            Verify.InRange(count >= 0 && Count - index >= count, nameof(count));
+
+            for (int i = 0; i < count; i++)
+            {
+                RemoveAt(index);
+            }
+        }
+
         public T[] ToArray()
         {
             if (IsEmpty)
@@ -306,8 +347,23 @@ namespace Clever.Collections
             }
 
             var array = new T[_count];
-            CopyTo(array, 0);
+            CopyTo(array);
             return array;
+        }
+
+        private void CopyBlock(int blockIndex, T[] array, ref int arrayIndex, ref int count)
+        {
+            CopyBlockEnd(blockIndex, 0, array, ref arrayIndex, ref count);
+        }
+
+        private void CopyBlockEnd(int blockIndex, int elementIndex, T[] array, ref int arrayIndex, ref int count)
+        {
+            var block = Blocks[blockIndex];
+            int copyCount = Math.Min(count, block.Count);
+            Array.Copy(block.Array, elementIndex, array, arrayIndex, copyCount);
+
+            arrayIndex += copyCount;
+            count -= copyCount;
         }
 
         private Position GetPosition(int index)
@@ -441,10 +497,23 @@ namespace Clever.Collections
             Array.Copy(block.Array, 0, block.Array, 1, block.Count - 1);
         }
 
+        [ExcludeFromCodeCoverage]
+        T IList<T>.this[int index]
+        {
+            get => this[index];
+            set => this[index] = value;
+        }
+
+        [ExcludeFromCodeCoverage]
+        T IReadOnlyList<T>.this[int index] => this[index];
+
+        [ExcludeFromCodeCoverage]
         bool ICollection<T>.IsReadOnly => false;
 
+        [ExcludeFromCodeCoverage]
         IEnumerator<T> IEnumerable<T>.GetEnumerator() => GetEnumerator();
 
+        [ExcludeFromCodeCoverage]
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
     }
 }
